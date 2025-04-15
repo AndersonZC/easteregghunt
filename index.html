@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Easter Egg Hunt Leaderboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .egg-image {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .header-section {
+            background-color: #f0f9ff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .recent-activity {
+            background-color: #fffbeb;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .leaderboard {
+            background-color: #f8fafc;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .progress-container {
+            height: 24px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            transition: width 0.5s ease-in-out;
+            border-radius: 9999px;
+        }
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="container mx-auto max-w-5xl">
+        <h1 class="text-4xl font-bold text-center text-indigo-700 mb-8">Easter Egg Hunt Leaderboard</h1>
+        
+        <!-- Status Section -->
+        <div class="header-section p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Leader Section -->
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-700 mb-3">Current Leader</h2>
+                    <div class="flex items-center" id="leader-section">
+                        <div class="animate-pulse bg-gray-200 h-12 w-full rounded"></div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="recent-activity p-4">
+                    <h2 class="text-xl font-semibold text-amber-700 mb-3">Most Recent Find</h2>
+                    <div id="recent-activity">
+                        <div class="animate-pulse bg-gray-200 h-12 w-full rounded"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="mt-8">
+                <div class="flex justify-between mb-2">
+                    <h2 class="text-xl font-semibold text-gray-700">Overall Progress</h2>
+                    <span id="progress-text" class="font-medium">0/0 eggs found</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Leaderboard -->
+        <div class="leaderboard p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">All Finds</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-gray-700">Time</th>
+                            <th class="px-4 py-3 text-left text-gray-700">Name</th>
+                            <th class="px-4 py-3 text-left text-gray-700">Egg #</th>
+                            <th class="px-4 py-3 text-left text-gray-700">Image</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <tr>
+                            <td colspan="4" class="text-center py-4">Loading data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Configuration Section -->
+        <div class="mt-8 p-6 bg-white rounded-lg shadow">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Configuration</h2>
+            <div class="mb-4">
+                <label for="sheet-url" class="block text-sm font-medium text-gray-700 mb-1">Google Sheet Published URL (CSV)</label>
+                <input type="text" id="sheet-url" class="w-full p-2 border rounded" placeholder="Enter the published CSV URL from your Google Sheet">
+            </div>
+            <div class="mb-4">
+                <label for="total-eggs" class="block text-sm font-medium text-gray-700 mb-1">Total Number of Eggs</label>
+                <input type="number" id="total-eggs" class="w-full p-2 border rounded" placeholder="Enter total number of eggs" value="10">
+            </div>
+            <div class="mb-4">
+                <label for="refresh-interval" class="block text-sm font-medium text-gray-700 mb-1">Refresh Interval (seconds)</label>
+                <input type="number" id="refresh-interval" class="w-full p-2 border rounded" value="30" min="5">
+            </div>
+            <button id="save-config" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save Configuration</button>
+        </div>
+        
+        <div class="mt-6 text-center text-gray-600 text-sm">
+            <p>Last updated: <span id="last-updated">Never</span></p>
+        </div>
+    </div>
+    
+    <script>
+    // Default configuration
+    let config = {
+        sheetUrl: '',
+        totalEggs: 10,
+        refreshInterval: 30 // seconds
+    };
+    
+    // Try to load saved configuration
+    function loadConfig() {
+        const savedConfig = localStorage.getItem('eggHuntConfig');
+        if (savedConfig) {
+            config = JSON.parse(savedConfig);
+            document.getElementById('sheet-url').value = config.sheetUrl;
+            document.getElementById('total-eggs').value = config.totalEggs;
+            document.getElementById('refresh-interval').value = config.refreshInterval;
+        }
+    }
+    
+    // Save configuration
+    function saveConfig() {
+        config.sheetUrl = document.getElementById('sheet-url').value.trim();
+        config.totalEggs = parseInt(document.getElementById('total-eggs').value);
+        config.refreshInterval = Math.max(5, parseInt(document.getElementById('refresh-interval').value));
+        
+        localStorage.setItem('eggHuntConfig', JSON.stringify(config));
+        alert('Configuration saved!');
+        
+        // Restart the refresh timer
+        startRefreshTimer();
+        
+        // Immediately fetch data
+        fetchData();
+    }
+    
+    // Fetch data from Google Sheets
+    async function fetchData() {
+        if (!config.sheetUrl) {
+            console.log('No Sheet URL configured');
+            return;
+        }
+        
+        try {
+            const response = await fetch(config.sheetUrl);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            
+            const csvText = await response.text();
+            const formattedData = parseCSV(csvText);
+            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+            
+            // Update UI
+            updateLeaderboard(formattedData);
+            updateLeaderSection(formattedData);
+            updateRecentActivity(formattedData);
+            updateProgressBar(formattedData);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }
+    
+    // Parse CSV data
+    function parseCSV(csv) {
+        // Split the CSV into lines
+        const lines = csv.split('\n');
+        if (lines.length <= 1) {
+            return [];
+        }
+        
+        // Parse headers (assuming first line is headers)
+        const headers = lines[0].split(',').map(header => header.trim());
+        
+        // Find the indices of our columns
+        const timestampIndex = headers.findIndex(h => h.toLowerCase().includes('timestamp'));
+        const nameIndex = headers.findIndex(h => h.toLowerCase().includes('name'));
+        const eggNumberIndex = headers.findIndex(h => h.toLowerCase().includes('egg') && h.toLowerCase().includes('number'));
+        const imageUrlIndex = headers.findIndex(h => h.toLowerCase().includes('url') || h.toLowerCase().includes('image'));
+        
+        // Parse data rows
+        const formattedData = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            
+            // Handle potential commas within quoted fields
+            let row = [];
+            let insideQuotes = false;
+            let currentValue = '';
+            
+            for (let j = 0; j < lines[i].length; j++) {
+                const char = lines[i][j];
+                
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                } else if (char === ',' && !insideQuotes) {
+                    row.push(currentValue.trim());
+                    currentValue = '';
+                } else {
+                    currentValue += char;
+                }
+            }
+            
+            // Add the last value
+            row.push(currentValue.trim());
+            
+            // Create data object
+            const rowData = {
+                timestamp: timestampIndex >= 0 ? row[timestampIndex] : '',
+                name: nameIndex >= 0 ? row[nameIndex] : '',
+                eggNumber: eggNumberIndex >= 0 ? row[eggNumberIndex] : '',
+                imageUrl: imageUrlIndex >= 0 ? row[imageUrlIndex] : ''
+            };
+            
+            formattedData.push(rowData);
+        }
+        
+        // Sort by timestamp (newest first)
+        formattedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        // Update UI
+        updateLeaderboard(formattedData);
+        updateLeaderSection(formattedData);
+        updateRecentActivity(formattedData);
+        updateProgressBar(formattedData);
+    }
+    
+    // Update the leaderboard table
+    function updateLeaderboard(data) {
+        const tbody = document.getElementById('leaderboard-body');
+        tbody.innerHTML = '';
+        
+        if (data.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="4" class="text-center py-4">No data available</td>';
+            tbody.appendChild(row);
+            return;
+        }
+        
+        data.forEach(item => {
+            const row = document.createElement('tr');
+            row.className = 'border-t hover:bg-gray-50';
+            
+            // Format the timestamp
+            const date = new Date(item.timestamp);
+            const formattedDate = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            row.innerHTML = `
+                <td class="px-4 py-3 text-gray-800">${formattedDate}</td>
+                <td class="px-4 py-3 text-gray-800 font-medium">${item.name}</td>
+                <td class="px-4 py-3 text-gray-800">${item.eggNumber}</td>
+                <td class="px-4 py-3">
+                    <img src="${item.imageUrl}" alt="Egg ${item.eggNumber}" class="egg-image">
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+    
+    // Update the leader section
+    function updateLeaderSection(data) {
+        const leaderSection = document.getElementById('leader-section');
+        
+        // Count eggs found by each player
+        const playerCounts = {};
+        data.forEach(item => {
+            if (!playerCounts[item.name]) {
+                playerCounts[item.name] = 0;
+            }
+            playerCounts[item.name]++;
+        });
+        
+        // Find the player with the most eggs
+        let leader = '';
+        let maxEggs = 0;
+        
+        for (const player in playerCounts) {
+            if (playerCounts[player] > maxEggs) {
+                maxEggs = playerCounts[player];
+                leader = player;
+            }
+        }
+        
+        if (leader) {
+            leaderSection.innerHTML = `
+                <div class="bg-yellow-100 p-4 rounded-lg flex items-center">
+                    <div class="bg-yellow-400 text-yellow-800 p-2 rounded-full mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-800">${leader}</h3>
+                        <p class="text-gray-600">${maxEggs} eggs found</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            leaderSection.innerHTML = '<p>No data available</p>';
+        }
+    }
+    
+    // Update the recent activity section
+    function updateRecentActivity(data) {
+        const recentActivity = document.getElementById('recent-activity');
+        
+        if (data.length > 0) {
+            const mostRecent = data[0];
+            recentActivity.innerHTML = `
+                <div class="flex items-center">
+                    <img src="${mostRecent.imageUrl}" alt="Egg ${mostRecent.eggNumber}" class="egg-image mr-3">
+                    <div>
+                        <p class="font-bold text-gray-800">${mostRecent.name}</p>
+                        <p class="text-gray-600">Found egg #${mostRecent.eggNumber}</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            recentActivity.innerHTML = '<p>No recent activity</p>';
+        }
+    }
+    
+    // Update the progress bar
+    function updateProgressBar(data) {
+        // Count unique eggs found
+        const uniqueEggs = new Set();
+        data.forEach(item => {
+            uniqueEggs.add(item.eggNumber);
+        });
+        
+        const eggsFound = uniqueEggs.size;
+        const totalEggs = config.totalEggs;
+        const percentage = Math.min(100, Math.round((eggsFound / totalEggs) * 100));
+        
+        document.getElementById('progress-bar').style.width = `${percentage}%`;
+        document.getElementById('progress-text').textContent = `${eggsFound}/${totalEggs} eggs found`;
+    }
+    
+    // Setup refresh timer
+    let refreshTimer;
+    
+    function startRefreshTimer() {
+        // Clear existing timer
+        if (refreshTimer) {
+            clearInterval(refreshTimer);
+        }
+        
+        // Set new timer
+        const intervalMs = config.refreshInterval * 1000;
+        refreshTimer = setInterval(fetchData, intervalMs);
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load saved configuration
+        loadConfig();
+        
+        // Set up event listeners
+        document.getElementById('save-config').addEventListener('click', saveConfig);
+        
+        // Start refresh timer
+        startRefreshTimer();
+        
+        // Fetch data immediately
+        fetchData();
+    });
+    </script>
+</body>
+</html>
