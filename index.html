@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+// Setup refresh timer
+    let refreshTimer;<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -73,7 +74,7 @@
             <div class="mt-8">
                 <div class="flex justify-between mb-2">
                     <h2 class="text-xl font-semibold text-gray-700">Overall Progress</h2>
-                    <span id="progress-text" class="font-medium">0/0 eggs found</span>
+                    <span id="progress-text" class="font-medium">0/48 eggs found</span>
                 </div>
                 <div class="progress-container">
                     <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
@@ -103,23 +104,7 @@
             </div>
         </div>
         
-        <!-- Configuration Section -->
-        <div class="mt-8 p-6 bg-white rounded-lg shadow">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">Configuration</h2>
-            <div class="mb-4">
-                <label for="sheet-url" class="block text-sm font-medium text-gray-700 mb-1">Google Sheet Published URL (CSV)</label>
-                <input type="text" id="sheet-url" class="w-full p-2 border rounded" placeholder="Enter the published CSV URL from your Google Sheet">
-            </div>
-            <div class="mb-4">
-                <label for="total-eggs" class="block text-sm font-medium text-gray-700 mb-1">Total Number of Eggs</label>
-                <input type="number" id="total-eggs" class="w-full p-2 border rounded" placeholder="Enter total number of eggs" value="10">
-            </div>
-            <div class="mb-4">
-                <label for="refresh-interval" class="block text-sm font-medium text-gray-700 mb-1">Refresh Interval (seconds)</label>
-                <input type="number" id="refresh-interval" class="w-full p-2 border rounded" value="30" min="5">
-            </div>
-            <button id="save-config" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save Configuration</button>
-        </div>
+        <!-- Configuration Section - REMOVED -->
         
         <div class="mt-6 text-center text-gray-600 text-sm">
             <p>Last updated: <span id="last-updated">Never</span></p>
@@ -129,9 +114,9 @@
     <script>
     // Default configuration
     let config = {
-        sheetUrl: '',
-        totalEggs: 10,
-        refreshInterval: 30 // seconds
+        sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3GWG7_o4wMLqEebc7rIDpyLp2wPCh4l5j-01R0Pi3oiBHT8G2PUVm75hdt3Az0zgGTiJj-9dobl3J/pub?output=csv',
+        totalEggs: 48,
+        refreshInterval: 10 // seconds
     };
     
     // Try to load saved configuration
@@ -381,11 +366,8 @@
     
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-        // Load saved configuration
+        // Load configuration (hardcoded)
         loadConfig();
-        
-        // Set up event listeners
-        document.getElementById('save-config').addEventListener('click', saveConfig);
         
         // Start refresh timer
         startRefreshTimer();
