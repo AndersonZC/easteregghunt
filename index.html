@@ -7,18 +7,32 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
         .egg-image {
-            width: 50px; /* Increased size slightly */
+            width: 50px;
             height: 50px;
             object-fit: cover;
             border-radius: 50%;
-            background-color: #e5e7eb; /* Added background for loading/error */
+            background-color: #e5e7eb; /* Background for loading/error */
+            vertical-align: middle; /* Align image nicely with text */
+        }
+        .error-placeholder { /* Style for the text shown on image error */
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            background-color: #fee2e2; /* Light red background */
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px; /* Center text vertically */
+            font-size: 0.7rem;
+            color: #b91c1c; /* Darker red text */
+            font-weight: bold;
+            vertical-align: middle;
         }
         .header-section {
             background-color: #f0f9ff;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        .recent-activity-container { /* Renamed for clarity */
+        .recent-activity-container {
             background-color: #fffbeb;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -44,13 +58,12 @@
             background-color: #f3f4f6;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        /* Style for placeholders */
         .placeholder {
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 60px; /* Adjust height as needed */
-            color: #6b7280; /* Gray text */
+            height: 60px;
+            color: #6b7280;
         }
     </style>
 </head>
@@ -70,7 +83,7 @@
                 <div class="recent-activity-container p-4">
                     <h2 class="text-xl font-semibold text-amber-700 mb-3">Most Recent Find</h2>
                     <div id="recent-activity">
-                        <div class="placeholder animate-pulse bg-gray-200 h-16 w-full rounded">Loading...</div>
+                         <div class="placeholder animate-pulse bg-gray-200 h-16 w-full rounded">Loading...</div>
                     </div>
                 </div>
             </div>
@@ -113,9 +126,9 @@
     </div>
 
     <script>
-    // Default configuration (Hardcoded as config section removed)
+    // Default configuration
     let config = {
-        sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3GWG7_o4wMLqEebc7rIDpyLp2wPCh4l5j-01R0Pi3oiBHT8G2PUVm75hdt3Az0zgGTiJj-9dobl3J/pub?output=csv',
+        sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3GWG7_o4wMLqEebc7rIDpyLp2wPCh4l5j-01R0Pi3oiBHT8G2PUVm75hdt3Az0zgGTiJj-9dobl3J/pub?output=csv', // Make sure this is the correct PUBLISHED CSV URL
         totalEggs: 48,
         refreshInterval: 10 // seconds
     };
@@ -123,35 +136,35 @@
     // Setup refresh timer
     let refreshTimer;
 
-    // --- Removed loadConfig and saveConfig functions as the HTML elements are gone ---
-
     // Fetch data from Google Sheets
     async function fetchData() {
-        console.log("Fetching data..."); // Log start
+        console.log("Fetching data...");
         if (!config.sheetUrl) {
             console.error('No Sheet URL configured');
-            // Display error in UI
-            document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="4" class="text-center py-4 px-4 text-red-600">Error: Google Sheet URL is not configured.</td></tr>';
-            document.getElementById('leader-section').innerHTML = '<div class="placeholder text-red-600">Error: No Sheet URL</div>';
-            document.getElementById('recent-activity').innerHTML = '<div class="placeholder text-red-600">Error: No Sheet URL</div>';
+            updateUIOnError('Error: Google Sheet URL is not configured.');
             return;
         }
 
         try {
             const response = await fetch(config.sheetUrl);
             if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.statusText}`);
+                throw new Error(`Network response was not ok: ${response.statusText} (Status: ${response.status})`);
             }
 
             const csvText = await response.text();
-            console.log("Data fetched, parsing CSV..."); // Log success
+            // console.log("--- Raw CSV Text Start ---"); // Uncomment for debugging CSV content
+            // console.log(csvText);
+            // console.log("--- Raw CSV Text End ---");
+
+            console.log("Data fetched, parsing CSV...");
             const formattedData = parseCSV(csvText);
 
-            if (formattedData === null) { // Check if parsing failed
-              throw new Error("CSV Parsing failed.");
+            if (formattedData === null) { // Check if parsing failed (error handled within parseCSV)
+              // Error message already shown in UI by parseCSV
+              return; // Stop processing if parsing failed
             }
 
-            console.log("CSV Parsed, updating UI..."); // Log parse success
+            console.log("CSV Parsed, updating UI...");
 
             document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
 
@@ -160,78 +173,123 @@
             updateLeaderSection(formattedData);
             updateRecentActivity(formattedData);
             updateProgressBar(formattedData);
-            console.log("UI Updated."); // Log UI update
+            console.log("UI Updated.");
 
         } catch (error) {
             console.error('Error fetching or processing data:', error);
-            // Display error in UI
-             document.getElementById('leaderboard-body').innerHTML = `<tr><td colspan="4" class="text-center py-4 px-4 text-red-600">Error loading data: ${error.message}. Check console.</td></tr>`;
-             document.getElementById('leader-section').innerHTML = `<div class="placeholder text-red-600">Error loading data</div>`;
-             document.getElementById('recent-activity').innerHTML = `<div class="placeholder text-red-600">Error loading data</div>`;
+            updateUIOnError(`Error loading data: ${error.message}. Check console.`);
         }
     }
 
-    // Parse CSV data
+    /**
+     * Parses CSV text, handling commas within quoted fields and escaped quotes.
+     * @param {string} csv - The raw CSV text.
+     * @returns {Array|null} An array of data objects, or null if parsing fails critically.
+     */
     function parseCSV(csv) {
         try {
-            const lines = csv.split(/[\r\n]+/); // Split by newline, handling different OS endings
+            const lines = csv.split(/[\r\n]+/); // Split by newline
+
+            // Trim empty lines from the end
+            while (lines.length > 0 && !lines[lines.length - 1].trim()) {
+                lines.pop();
+            }
+
             if (lines.length <= 1) {
-                console.log("CSV has no data rows.");
+                console.log("CSV has no data rows after trimming.");
                 return []; // No data or only header
             }
 
-            // Remove any potential empty lines at the end
-             while (lines.length > 0 && !lines[lines.length - 1].trim()) {
-                lines.pop();
+            // --- Parse Header Row ---
+            const headerLine = lines[0];
+            const headersRaw = [];
+            let currentHeader = '';
+            let inQuotesHeader = false;
+            for (let j = 0; j < headerLine.length; j++) {
+                const char = headerLine[j];
+                if (char === '"' && j + 1 < headerLine.length && headerLine[j + 1] === '"') {
+                    currentHeader += '"'; j++; // Handle escaped quote
+                } else if (char === '"') {
+                    inQuotesHeader = !inQuotesHeader;
+                } else if (char === ',' && !inQuotesHeader) {
+                    headersRaw.push(currentHeader.trim()); currentHeader = ''; // End of header
+                } else {
+                    currentHeader += char;
+                }
             }
-             if (lines.length <= 1) {
-                console.log("CSV has no data rows after trimming.");
-                return []; // Still no data after trimming
-            }
+            headersRaw.push(currentHeader.trim()); // Add last header
+            const headers = headersRaw.map(h => h.toLowerCase()); // Trim and lowercase headers
+            console.log("Parsed Headers:", headers); // Log parsed headers
 
-
-            const headers = lines[0].split(',').map(header => header.trim().toLowerCase()); // Trim and lowercase headers
-
-            // Find the indices of our columns (more robust check)
-            const timestampIndex = headers.indexOf('timestamp'); // Exact match preferred
+            // --- Find Column Indices ---
+            const timestampIndex = headers.indexOf('timestamp');
             const nameIndex = headers.indexOf('name');
-            const eggNumberIndex = headers.findIndex(h => h.includes('egg') && h.includes('number')); // Keep fuzzy for this
-            const imageUrlIndex = headers.findIndex(h => h.includes('url') || h.includes('image')); // Keep fuzzy for this
+            const eggNumberIndex = headers.findIndex(h => h.includes('egg') && h.includes('number'));
+            const imageUrlIndex = headers.findIndex(h => h.includes('url') || h.includes('image'));
 
-             if (timestampIndex === -1 || nameIndex === -1 || eggNumberIndex === -1 || imageUrlIndex === -1) {
-                console.error("Error: Could not find all required columns. Found indices:", { timestampIndex, nameIndex, eggNumberIndex, imageUrlIndex }, "Headers:", headers);
-                // Inform the user about missing columns
-                document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="4" class="text-center py-4 px-4 text-red-600">Error: Required columns (Timestamp, Name, Egg Number, Image URL) not found in Sheet.</td></tr>';
+            if (timestampIndex === -1 || nameIndex === -1 || eggNumberIndex === -1 || imageUrlIndex === -1) {
+                const missing = [
+                    (timestampIndex === -1 ? 'timestamp' : null),
+                    (nameIndex === -1 ? 'name' : null),
+                    (eggNumberIndex === -1 ? 'egg number' : null),
+                    (imageUrlIndex === -1 ? 'image url' : null)
+                ].filter(Boolean).join(', ');
+                console.error(`Error: Could not find required column(s): ${missing}. Found headers:`, headers);
+                updateUIOnError(`Error: Required column(s) (${missing}) not found in Sheet. Check first row.`);
                 return null; // Indicate failure
             }
+            console.log("Found Indices:", { timestampIndex, nameIndex, eggNumberIndex, imageUrlIndex });
 
 
+            // --- Parse Data Rows ---
             const formattedData = [];
+            for (let i = 1; i < lines.length; i++) { // Start from data row (index 1)
+                const line = lines[i]; // Don't trim lines here, whitespace might be inside quotes
+                if (!line || !line.trim()) continue; // Skip empty lines
 
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue; // Skip empty lines
+                const row = [];
+                let currentVal = '';
+                let inQuotes = false;
 
-                // Simple CSV split (assumes commas are not within fields)
-                // For more complex CSVs (commas in quotes), a more robust parser is needed
-                const row = line.split(',').map(cell => cell.trim());
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
 
-                // Basic validation: check if row has expected number of columns based on header
-                // This is a basic check, might need adjustment if columns can be missing
-                if (row.length < Math.max(timestampIndex, nameIndex, eggNumberIndex, imageUrlIndex) + 1) {
-                     console.warn(`Skipping row ${i + 1}: Incorrect number of columns. Expected at least ${Math.max(timestampIndex, nameIndex, eggNumberIndex, imageUrlIndex) + 1}, got ${row.length}. Line: "${line}"`);
-                     continue;
+                    if (char === '"' && j + 1 < line.length && line[j + 1] === '"') {
+                        // Handle escaped double quote "" -> "
+                        currentVal += '"';
+                        j++; // Skip the second quote
+                    } else if (char === '"') {
+                        // Toggle quote state
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        // End of a value when comma is encountered outside quotes
+                        row.push(currentVal.trim()); // Trim individual values *after* parsing
+                        currentVal = ''; // Reset for next value
+                    } else {
+                        // Append character to current value
+                        currentVal += char;
+                    }
+                }
+                row.push(currentVal.trim()); // Add the last value for the row
+
+                // Check column count consistency
+                if (row.length !== headers.length) {
+                    console.warn(`Skipping row ${i + 1}: Parsed column count (${row.length}) does not match header count (${headers.length}). Line: "${line}"`);
+                    continue; // Skip rows with mismatched columns
                 }
 
-
+                // Create data object using found indices
                 const rowData = {
-                    timestamp: row[timestampIndex] ? row[timestampIndex].replace(/^"|"$/g, '') : '', // Remove quotes if present
-                    name: row[nameIndex] ? row[nameIndex].replace(/^"|"$/g, '') : '',
-                    eggNumber: row[eggNumberIndex] ? row[eggNumberIndex].replace(/^"|"$/g, '') : '',
-                    imageUrl: row[imageUrlIndex] ? row[imageUrlIndex].replace(/^"|"$/g, '') : ''
+                    timestamp: row[timestampIndex] || '', // Use empty string if undefined
+                    name: row[nameIndex] || '',
+                    eggNumber: row[eggNumberIndex] || '',
+                    imageUrl: row[imageUrlIndex] || ''
                 };
 
-                 // Validate timestamp format before adding
+                 // Log extracted image URL for debugging
+                 // console.log(`Row ${i+1} Image URL:`, rowData.imageUrl);
+
+                // Validate timestamp format before adding
                 if (isNaN(new Date(rowData.timestamp).getTime())) {
                    console.warn(`Skipping row ${i + 1}: Invalid timestamp format "${rowData.timestamp}". Line: "${line}"`);
                    continue; // Skip rows with invalid dates as they break sorting
@@ -240,7 +298,7 @@
                 formattedData.push(rowData);
             }
 
-            // Sort by timestamp (newest first) AFTER parsing all rows
+            // Sort by timestamp (newest first) AFTER parsing all valid rows
             formattedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             console.log(`Parsed ${formattedData.length} valid rows.`);
@@ -248,56 +306,66 @@
 
         } catch (error) {
             console.error("Error parsing CSV:", error);
-             document.getElementById('leaderboard-body').innerHTML = `<tr><td colspan="4" class="text-center py-4 px-4 text-red-600">Error parsing data: ${error.message}. Check console.</td></tr>`;
+            updateUIOnError(`Error parsing data: ${error.message}. Check console.`);
             return null; // Indicate failure
         }
     }
 
+    // --- UI Update Functions ---
 
-    // Update the leaderboard table
+    /** Helper function to display errors in the UI */
+    function updateUIOnError(errorMessage) {
+         document.getElementById('leaderboard-body').innerHTML = `<tr><td colspan="4" class="text-center py-4 px-4 text-red-600">${errorMessage}</td></tr>`;
+         document.getElementById('leader-section').innerHTML = `<div class="placeholder text-red-600 p-4">${errorMessage}</div>`;
+         document.getElementById('recent-activity').innerHTML = `<div class="placeholder text-red-600 p-4">${errorMessage}</div>`;
+         document.getElementById('progress-text').textContent = 'Error';
+    }
+
+    /** Creates the HTML for an image with error handling */
+    function createImageHtml(imageUrl, altText) {
+        if (!imageUrl) {
+            return '<div class="error-placeholder" title="No image URL provided">No Img</div>';
+        }
+        // Added 'referrerpolicy="no-referrer"' which can sometimes help with loading images from Google Drive/Photos if that's the source
+         return `<img src="${imageUrl}" alt="${altText}" class="egg-image" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" >` +
+                `<div class="error-placeholder" style="display: none;" title="Failed to load image from ${imageUrl}">Img Err</div>`;
+    }
+
+
     function updateLeaderboard(data) {
         const tbody = document.getElementById('leaderboard-body');
-        tbody.innerHTML = ''; // Clear previous data or loading message
+        tbody.innerHTML = '';
 
         if (!data || data.length === 0) {
-            const row = document.createElement('tr');
-            row.innerHTML = '<td colspan="4" class="text-center py-4 px-4 text-gray-500">No egg finds recorded yet.</td>';
-            tbody.appendChild(row);
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 px-4 text-gray-500">No egg finds recorded yet.</td></tr>';
             return;
         }
 
         data.forEach(item => {
             const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50'; // Tailwind class for hover effect
+            row.className = 'hover:bg-gray-50';
 
-            // Format the timestamp
             let formattedDate = 'Invalid Date';
             try {
                  const date = new Date(item.timestamp);
                  if (!isNaN(date)) {
-                    // Format as HH:MM AM/PM
                     formattedDate = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
                  }
-            } catch(e) {
-                console.warn("Could not format date:", item.timestamp);
-            }
+            } catch(e) {/* ignore */}
 
+            const imageHtml = createImageHtml(item.imageUrl, `Egg ${item.eggNumber || ''}`);
 
             row.innerHTML = `
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${formattedDate}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${item.name || 'N/A'}</td>
                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${item.eggNumber || 'N/A'}</td>
-                <td class="px-4 py-3">
-                    ${item.imageUrl ? `<img src="${item.imageUrl}" alt="Egg ${item.eggNumber || ''}" class="egg-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';" > <span style='display: none; font-size: 0.8em; color: red;'>Img Err</span>` : '<span class="text-xs text-gray-400">No image</span>'}
-                </td>
+                <td class="px-4 py-3">${imageHtml}</td>
             `;
-             // Added basic image error handling: hide broken img, show text.
 
             tbody.appendChild(row);
         });
     }
 
-    // Update the leader section (NOW INCLUDES IMAGE)
     function updateLeaderSection(data) {
         const leaderSection = document.getElementById('leader-section');
 
@@ -306,52 +374,46 @@
             return;
         }
 
-        // Count eggs found by each player and store their last image URL
         const playerCounts = {};
-        const playerLastImageUrl = {}; // Store the URL of the *first* encountered find (most recent)
+        const playerLastImageUrl = {};
         data.forEach(item => {
-            if (item.name) { // Only count if name is present
+            if (item.name) {
                  if (!playerCounts[item.name]) {
                     playerCounts[item.name] = 0;
-                    playerLastImageUrl[item.name] = item.imageUrl; // Store first encountered image URL for this player
+                    playerLastImageUrl[item.name] = item.imageUrl;
                 }
                 playerCounts[item.name]++;
             }
         });
 
-        // Find the player with the most eggs
         let leader = '';
         let maxEggs = 0;
-        let leaderImageUrl = ''; // To store the leader's image URL
+        let leaderImageUrl = '';
 
         for (const player in playerCounts) {
             if (playerCounts[player] > maxEggs) {
                 maxEggs = playerCounts[player];
                 leader = player;
-                leaderImageUrl = playerLastImageUrl[player]; // Get the stored image URL for the leader
+                leaderImageUrl = playerLastImageUrl[player];
             }
-            // Note: Simple tie-breaking (first player encountered in loop with max eggs wins).
-            // Could add logic here if needed (e.g., earliest find time among tied leaders).
         }
 
         if (leader) {
-            // Use flex layout to place image next to text
+             const imageHtml = createImageHtml(leaderImageUrl, `Latest find by ${leader}`);
              leaderSection.innerHTML = `
                 <div class="flex items-center p-3 bg-blue-50 rounded-lg">
-                     ${leaderImageUrl ? `<img src="${leaderImageUrl}" alt="Latest find by ${leader}" class="egg-image mr-4 flex-shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"> <div style='display: none; width: 50px; height: 50px; background-color: #eee; border-radius: 50%; text-align: center; line-height: 50px; font-size:0.7rem; color: red;' class='mr-4 flex-shrink-0'>Img Err</div>` : '<div class="egg-image mr-4 flex-shrink-0 bg-gray-300"></div>'}
+                     <div class="mr-4 flex-shrink-0">${imageHtml}</div>
                      <div class="flex-grow">
                         <h3 class="font-bold text-lg text-gray-800">${leader}</h3>
                         <p class="text-sm text-gray-600">${maxEggs} egg${maxEggs !== 1 ? 's' : ''} found</p>
                     </div>
                 </div>
             `;
-            // Added basic image error handling and a placeholder if no image URL exists
         } else {
             leaderSection.innerHTML = '<div class="placeholder text-gray-500">No leader yet.</div>';
         }
     }
 
-    // Update the recent activity section
     function updateRecentActivity(data) {
         const recentActivity = document.getElementById('recent-activity');
 
@@ -360,42 +422,33 @@
             return;
         }
 
-        const mostRecent = data[0]; // Data is sorted newest first
+        const mostRecent = data[0];
 
         if (mostRecent && mostRecent.name) {
-            // Use flex layout, similar to leader section
+             const imageHtml = createImageHtml(mostRecent.imageUrl, `Egg ${mostRecent.eggNumber || ''}`);
             recentActivity.innerHTML = `
                 <div class="flex items-center">
-                     ${mostRecent.imageUrl ? `<img src="${mostRecent.imageUrl}" alt="Egg ${mostRecent.eggNumber || ''}" class="egg-image mr-3 flex-shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"> <div style='display: none; width: 50px; height: 50px; background-color: #eee; border-radius: 50%; text-align: center; line-height: 50px; font-size:0.7rem; color: red;' class='mr-3 flex-shrink-0'>Img Err</div>` : '<div class="egg-image mr-3 flex-shrink-0 bg-gray-300"></div>'}
+                     <div class="mr-3 flex-shrink-0">${imageHtml}</div>
                      <div class="flex-grow">
                         <p class="font-semibold text-gray-800">${mostRecent.name}</p>
                         <p class="text-sm text-gray-600">Found egg #${mostRecent.eggNumber || '?'}</p>
                     </div>
                 </div>
             `;
-             // Added basic image error handling and placeholder
         } else {
-             recentActivity.innerHTML = '<div class="placeholder text-gray-500">No recent activity</div>'; // Handle case where first item might be invalid
+             recentActivity.innerHTML = '<div class="placeholder text-gray-500">No valid recent activity found</div>';
         }
     }
 
-    // Update the progress bar
     function updateProgressBar(data) {
-         if (!data) {
-             console.warn("updateProgressBar called with invalid data");
-             return;
-         }
-        // Count unique eggs found based on eggNumber
+         if (!data) { return; }
         const uniqueEggs = new Set();
         data.forEach(item => {
-            if (item.eggNumber) { // Only count if eggNumber is present
-               uniqueEggs.add(item.eggNumber);
-            }
+            if (item.eggNumber) { uniqueEggs.add(item.eggNumber); }
         });
 
         const eggsFound = uniqueEggs.size;
-        const totalEggs = config.totalEggs > 0 ? config.totalEggs : 1; // Avoid division by zero
-        // Calculate percentage, ensuring it doesn't exceed 100
+        const totalEggs = config.totalEggs > 0 ? config.totalEggs : 1;
         const percentage = Math.min(100, Math.max(0, Math.round((eggsFound / totalEggs) * 100)));
 
         document.getElementById('progress-bar').style.width = `${percentage}%`;
@@ -404,27 +457,17 @@
 
 
     function startRefreshTimer() {
-        // Clear existing timer
-        if (refreshTimer) {
-            clearInterval(refreshTimer);
-        }
-
-        // Set new timer - Ensure interval is reasonable
-        const intervalMs = Math.max(5000, config.refreshInterval * 1000); // Minimum 5 seconds
+        if (refreshTimer) { clearInterval(refreshTimer); }
+        const intervalMs = Math.max(5000, config.refreshInterval * 1000);
         console.log(`Setting refresh interval to ${intervalMs / 1000} seconds.`);
         refreshTimer = setInterval(fetchData, intervalMs);
     }
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("DOM Loaded. Initializing leaderboard.");
-        // --- Configuration loading removed, using defaults ---
-
-        // Start refresh timer
+        console.log("DOM Loaded. Calling initial fetchData..."); // Log initial call
         startRefreshTimer();
-
-        // Fetch data immediately
-        fetchData();
+        fetchData(); // Fetch data immediately when the DOM is ready
     });
     </script>
 </body>
