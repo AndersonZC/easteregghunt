@@ -6,65 +6,19 @@
     <title>Easter Egg Hunt Leaderboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
-        .egg-image {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 50%;
-            background-color: #e5e7eb; /* Background for loading/error */
-            vertical-align: middle; /* Align image nicely with text */
-        }
-        .error-placeholder { /* Style for the text shown on image error */
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            background-color: #fee2e2; /* Light red background */
-            border-radius: 50%;
-            text-align: center;
-            line-height: 50px; /* Center text vertically */
-            font-size: 0.7rem;
-            color: #b91c1c; /* Darker red text */
-            font-weight: bold;
-            vertical-align: middle;
-        }
-        .header-section {
-            background-color: #f0f9ff;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .recent-activity-container {
-            background-color: #fffbeb;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .leaderboard {
-            background-color: #f8fafc;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .progress-container {
-            height: 24px;
-            background-color: #e5e7eb;
-            border-radius: 9999px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #60a5fa, #3b82f6);
-            transition: width 0.5s ease-in-out;
-            border-radius: 9999px;
-        }
-        body {
-            background-color: #f3f4f6;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .placeholder {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 60px;
-            color: #6b7280;
-        }
+        /* ... (keep all existing styles: .egg-image, .error-placeholder, .header-section, etc.) ... */
+         .egg-image { width: 50px; height: 50px; object-fit: cover; border-radius: 50%; background-color: #e5e7eb; vertical-align: middle; }
+         .error-placeholder { display: inline-block; width: 50px; height: 50px; background-color: #fee2e2; border-radius: 50%; text-align: center; line-height: 50px; font-size: 0.7rem; color: #b91c1c; font-weight: bold; vertical-align: middle; }
+         .header-section { background-color: #f0f9ff; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+         .recent-activity-container { background-color: #fffbeb; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+         .leaderboard { background-color: #f8fafc; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+         .progress-container { height: 24px; background-color: #e5e7eb; border-radius: 9999px; overflow: hidden; }
+         .progress-bar { height: 100%; background: linear-gradient(90deg, #60a5fa, #3b82f6); transition: width 0.5s ease-in-out; border-radius: 9999px; }
+         body { background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+         .placeholder { display: flex; align-items: center; justify-content: center; height: 60px; color: #6b7280; }
+         .duplicate-row { background-color: #fee2e2; }
+         .duplicate-row:hover { background-color: #fecaca; }
+         tr.duplicate-row:hover { background-color: #fecaca !important; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -96,29 +50,30 @@
                 <div class="progress-container">
                     <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
                 </div>
+                <div id="duplicate-warning" class="text-center text-red-600 font-medium mt-2 h-5"></div>
             </div>
         </div>
 
         <div class="leaderboard p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">All Finds</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-white rounded-lg overflow-hidden shadow">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Time</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Egg #</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Image</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-body" class="divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="4" class="text-center py-4 px-4 text-gray-500">Loading data...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+             <h2 class="text-2xl font-bold text-gray-800 mb-4">All Finds</h2>
+             <div class="overflow-x-auto">
+                 <table class="min-w-full bg-white rounded-lg overflow-hidden shadow">
+                     <thead class="bg-gray-100">
+                         <tr>
+                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Time</th>
+                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Name</th>
+                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Egg #</th>
+                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Image</th>
+                         </tr>
+                     </thead>
+                     <tbody id="leaderboard-body" class="divide-y divide-gray-200">
+                         <tr>
+                             <td colspan="4" class="text-center py-4 px-4 text-gray-500">Loading data...</td>
+                         </tr>
+                     </tbody>
+                 </table>
+             </div>
+         </div>
 
         <div class="mt-6 text-center text-gray-600 text-sm">
             <p>Last updated: <span id="last-updated">Never</span></p>
@@ -126,19 +81,18 @@
     </div>
 
     <script>
-    // Default configuration
+    // --- Configuration and Setup ---
     let config = {
-        sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3GWG7_o4wMLqEebc7rIDpyLp2wPCh4l5j-01R0Pi3oiBHT8G2PUVm75hdt3Az0zgGTiJj-9dobl3J/pub?output=csv', // Make sure this is the correct PUBLISHED CSV URL
+        sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3GWG7_o4wMLqEebc7rIDpyLp2wPCh4l5j-01R0Pi3oiBHT8G2PUVm75hdt3Az0zgGTiJj-9dobl3J/pub?output=csv', // Ensure correct PUBLISHED CSV URL
         totalEggs: 48,
-        refreshInterval: 10 // seconds
+        refreshInterval: 10
     };
-
-    // Setup refresh timer
     let refreshTimer;
 
-    // Fetch data from Google Sheets
+    // --- Main Data Fetching and Processing ---
     async function fetchData() {
-        console.log("Fetching data...");
+        // ... (Keep existing fetchData logic, no changes needed here) ...
+         console.log("Fetching data...");
         if (!config.sheetUrl) {
             console.error('No Sheet URL configured');
             updateUIOnError('Error: Google Sheet URL is not configured.');
@@ -152,27 +106,22 @@
             }
 
             const csvText = await response.text();
-            // console.log("--- Raw CSV Text Start ---"); // Uncomment for debugging CSV content
-            // console.log(csvText);
-            // console.log("--- Raw CSV Text End ---");
-
             console.log("Data fetched, parsing CSV...");
             const formattedData = parseCSV(csvText);
 
-            if (formattedData === null) { // Check if parsing failed (error handled within parseCSV)
-              // Error message already shown in UI by parseCSV
-              return; // Stop processing if parsing failed
-            }
+            if (formattedData === null) { return; } // Stop if parsing failed
 
-            console.log("CSV Parsed, updating UI...");
+            console.log("Processing data for duplicates...");
+            const { uniqueEggsCount, duplicateEggNumbers } = processEggData(formattedData);
+            console.log(`Found ${uniqueEggsCount} unique eggs, ${duplicateEggNumbers.size} duplicate numbers.`);
 
+            console.log("Updating UI...");
             document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
 
-            // Update UI only AFTER data is successfully parsed
-            updateLeaderboard(formattedData);
+            updateLeaderboard(formattedData, duplicateEggNumbers);
             updateLeaderSection(formattedData);
             updateRecentActivity(formattedData);
-            updateProgressBar(formattedData);
+            updateProgressBar(uniqueEggsCount, duplicateEggNumbers);
             console.log("UI Updated.");
 
         } catch (error) {
@@ -181,293 +130,251 @@
         }
     }
 
-    /**
-     * Parses CSV text, handling commas within quoted fields and escaped quotes.
-     * @param {string} csv - The raw CSV text.
-     * @returns {Array|null} An array of data objects, or null if parsing fails critically.
-     */
+    /** Parses CSV text (robust version) */
     function parseCSV(csv) {
-        try {
-            const lines = csv.split(/[\r\n]+/); // Split by newline
+        // ... (Keep the robust parseCSV function from the previous version) ...
+         try {
+            const lines = csv.split(/[\r\n]+/);
 
-            // Trim empty lines from the end
-            while (lines.length > 0 && !lines[lines.length - 1].trim()) {
-                lines.pop();
-            }
+            while (lines.length > 0 && !lines[lines.length - 1].trim()) { lines.pop(); }
+            if (lines.length <= 1) { return []; }
 
-            if (lines.length <= 1) {
-                console.log("CSV has no data rows after trimming.");
-                return []; // No data or only header
-            }
-
-            // --- Parse Header Row ---
             const headerLine = lines[0];
             const headersRaw = [];
             let currentHeader = '';
             let inQuotesHeader = false;
             for (let j = 0; j < headerLine.length; j++) {
                 const char = headerLine[j];
-                if (char === '"' && j + 1 < headerLine.length && headerLine[j + 1] === '"') {
-                    currentHeader += '"'; j++; // Handle escaped quote
-                } else if (char === '"') {
-                    inQuotesHeader = !inQuotesHeader;
-                } else if (char === ',' && !inQuotesHeader) {
-                    headersRaw.push(currentHeader.trim()); currentHeader = ''; // End of header
-                } else {
-                    currentHeader += char;
-                }
+                if (char === '"' && j + 1 < headerLine.length && headerLine[j + 1] === '"') { currentHeader += '"'; j++; }
+                else if (char === '"') { inQuotesHeader = !inQuotesHeader; }
+                else if (char === ',' && !inQuotesHeader) { headersRaw.push(currentHeader.trim()); currentHeader = ''; }
+                else { currentHeader += char; }
             }
-            headersRaw.push(currentHeader.trim()); // Add last header
-            const headers = headersRaw.map(h => h.toLowerCase()); // Trim and lowercase headers
-            console.log("Parsed Headers:", headers); // Log parsed headers
+            headersRaw.push(currentHeader.trim());
+            const headers = headersRaw.map(h => h.toLowerCase());
 
-            // --- Find Column Indices ---
             const timestampIndex = headers.indexOf('timestamp');
             const nameIndex = headers.indexOf('name');
             const eggNumberIndex = headers.findIndex(h => h.includes('egg') && h.includes('number'));
             const imageUrlIndex = headers.findIndex(h => h.includes('url') || h.includes('image'));
 
             if (timestampIndex === -1 || nameIndex === -1 || eggNumberIndex === -1 || imageUrlIndex === -1) {
-                const missing = [
-                    (timestampIndex === -1 ? 'timestamp' : null),
-                    (nameIndex === -1 ? 'name' : null),
-                    (eggNumberIndex === -1 ? 'egg number' : null),
-                    (imageUrlIndex === -1 ? 'image url' : null)
-                ].filter(Boolean).join(', ');
-                console.error(`Error: Could not find required column(s): ${missing}. Found headers:`, headers);
-                updateUIOnError(`Error: Required column(s) (${missing}) not found in Sheet. Check first row.`);
-                return null; // Indicate failure
+                 const missing = [(timestampIndex === -1 ? 'timestamp' : null),(nameIndex === -1 ? 'name' : null),(eggNumberIndex === -1 ? 'egg number' : null),(imageUrlIndex === -1 ? 'image url' : null)].filter(Boolean).join(', ');
+                 console.error(`Error: Could not find required column(s): ${missing}. Found headers:`, headers);
+                 updateUIOnError(`Error: Required column(s) (${missing}) not found in Sheet. Check first row.`);
+                 return null;
             }
-            console.log("Found Indices:", { timestampIndex, nameIndex, eggNumberIndex, imageUrlIndex });
 
-
-            // --- Parse Data Rows ---
             const formattedData = [];
-            for (let i = 1; i < lines.length; i++) { // Start from data row (index 1)
-                const line = lines[i]; // Don't trim lines here, whitespace might be inside quotes
-                if (!line || !line.trim()) continue; // Skip empty lines
-
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line || !line.trim()) continue;
                 const row = [];
                 let currentVal = '';
                 let inQuotes = false;
-
                 for (let j = 0; j < line.length; j++) {
                     const char = line[j];
-
-                    if (char === '"' && j + 1 < line.length && line[j + 1] === '"') {
-                        // Handle escaped double quote "" -> "
-                        currentVal += '"';
-                        j++; // Skip the second quote
-                    } else if (char === '"') {
-                        // Toggle quote state
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        // End of a value when comma is encountered outside quotes
-                        row.push(currentVal.trim()); // Trim individual values *after* parsing
-                        currentVal = ''; // Reset for next value
-                    } else {
-                        // Append character to current value
-                        currentVal += char;
-                    }
+                    if (char === '"' && j + 1 < line.length && line[j + 1] === '"') { currentVal += '"'; j++; }
+                    else if (char === '"') { inQuotes = !inQuotes; }
+                    else if (char === ',' && !inQuotes) { row.push(currentVal.trim()); currentVal = ''; }
+                    else { currentVal += char; }
                 }
-                row.push(currentVal.trim()); // Add the last value for the row
+                row.push(currentVal.trim());
+                if (row.length !== headers.length) { console.warn(`Skipping row ${i + 1}: Parsed column count (${row.length}) != header count (${headers.length}). Line: "${line}"`); continue; }
 
-                // Check column count consistency
-                if (row.length !== headers.length) {
-                    console.warn(`Skipping row ${i + 1}: Parsed column count (${row.length}) does not match header count (${headers.length}). Line: "${line}"`);
-                    continue; // Skip rows with mismatched columns
-                }
-
-                // Create data object using found indices
                 const rowData = {
-                    timestamp: row[timestampIndex] || '', // Use empty string if undefined
-                    name: row[nameIndex] || '',
-                    eggNumber: row[eggNumberIndex] || '',
-                    imageUrl: row[imageUrlIndex] || ''
+                    timestamp: row[timestampIndex] || '', name: row[nameIndex] || '',
+                    eggNumber: row[eggNumberIndex] || '', imageUrl: row[imageUrlIndex] || ''
                 };
-
-                 // Log extracted image URL for debugging
-                 // console.log(`Row ${i+1} Image URL:`, rowData.imageUrl);
-
-                // Validate timestamp format before adding
-                if (isNaN(new Date(rowData.timestamp).getTime())) {
-                   console.warn(`Skipping row ${i + 1}: Invalid timestamp format "${rowData.timestamp}". Line: "${line}"`);
-                   continue; // Skip rows with invalid dates as they break sorting
-                }
-
+                if (isNaN(new Date(rowData.timestamp).getTime())) { console.warn(`Skipping row ${i + 1}: Invalid timestamp "${rowData.timestamp}". Line: "${line}"`); continue; }
                 formattedData.push(rowData);
             }
 
-            // Sort by timestamp (newest first) AFTER parsing all valid rows
             formattedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
             console.log(`Parsed ${formattedData.length} valid rows.`);
             return formattedData;
-
         } catch (error) {
             console.error("Error parsing CSV:", error);
             updateUIOnError(`Error parsing data: ${error.message}. Check console.`);
-            return null; // Indicate failure
+            return null;
         }
     }
+
+    /** Processes data for unique/duplicate eggs */
+    function processEggData(data) {
+        // ... (Keep the existing processEggData function) ...
+         const seenEggs = new Set();
+        const duplicateEggNumbers = new Set();
+        for (let i = data.length - 1; i >= 0; i--) { // Iterate oldest first
+            const item = data[i];
+            if (item.eggNumber) {
+                const eggNum = item.eggNumber;
+                 if (seenEggs.has(eggNum)) { duplicateEggNumbers.add(eggNum); }
+                 else { seenEggs.add(eggNum); }
+            }
+        }
+        return { uniqueEggsCount: seenEggs.size, duplicateEggNumbers };
+    }
+
+    // --- Google Drive URL Conversion ---
+
+    /**
+     * Attempts to convert known Google Drive sharing URLs into direct image links.
+     * IMPORTANT: This DOES NOT fix permission issues. Files must still be shared correctly.
+     * @param {string} originalUrl - The URL from the Google Sheet.
+     * @returns {string} The potentially converted direct URL or the original URL.
+     */
+    function getDirectGoogleDriveImageUrl(originalUrl) {
+        if (!originalUrl || typeof originalUrl !== 'string') {
+            return originalUrl; // Return original if invalid input
+        }
+
+        let fileId = null;
+
+        try {
+            // Try parsing using URL constructor first
+            const url = new URL(originalUrl);
+
+            if (url.hostname === 'drive.google.com') {
+                if (url.pathname.startsWith('/file/d/')) {
+                    // Pattern: /file/d/FILE_ID/view... or /file/d/FILE_ID/edit...
+                    const parts = url.pathname.split('/');
+                    if (parts.length >= 4 && parts[1] === 'file' && parts[2] === 'd') {
+                        fileId = parts[3];
+                    }
+                } else if (url.searchParams.has('id') && url.pathname.includes('/open')) {
+                    // Pattern: /open?id=FILE_ID...
+                    fileId = url.searchParams.get('id');
+                }
+            }
+        } catch (e) {
+            // Fallback to basic string matching if URL parsing fails
+             // console.warn(`URL parsing failed for ${originalUrl}. Using basic match.`); // Optional: Log fallback
+             if (originalUrl.includes('drive.google.com/file/d/')) {
+                 const match = originalUrl.match(/drive\.google\.com\/file\/d\/([^\/?]+)/); // Match between /d/ and next / or ?
+                 if (match && match[1]) fileId = match[1];
+             } else if (originalUrl.includes('drive.google.com/open?id=')) {
+                const match = originalUrl.match(/drive\.google\.com\/open\?id=([^&]+)/); // Match id= up to next &
+                if (match && match[1]) fileId = match[1];
+             }
+        }
+
+        // If we successfully extracted a File ID, construct the direct link
+        if (fileId) {
+            // console.log(`Attempting conversion for GDrive URL with File ID: ${fileId}`); // Optional: Log conversion attempt
+            return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        }
+
+        // If it wasn't identified as a convertible GDrive link, return the original URL
+        return originalUrl;
+    }
+
 
     // --- UI Update Functions ---
 
     /** Helper function to display errors in the UI */
     function updateUIOnError(errorMessage) {
+        // ... (Keep the existing updateUIOnError function) ...
          document.getElementById('leaderboard-body').innerHTML = `<tr><td colspan="4" class="text-center py-4 px-4 text-red-600">${errorMessage}</td></tr>`;
          document.getElementById('leader-section').innerHTML = `<div class="placeholder text-red-600 p-4">${errorMessage}</div>`;
          document.getElementById('recent-activity').innerHTML = `<div class="placeholder text-red-600 p-4">${errorMessage}</div>`;
          document.getElementById('progress-text').textContent = 'Error';
+         document.getElementById('duplicate-warning').textContent = '';
     }
 
-    /** Creates the HTML for an image with error handling */
+    /** Creates the HTML for an image, attempting GDrive URL conversion */
     function createImageHtml(imageUrl, altText) {
-        if (!imageUrl) {
+        // *** ADDED CALL TO CONVERSION FUNCTION ***
+        const directImageUrl = getDirectGoogleDriveImageUrl(imageUrl);
+
+        if (!directImageUrl) {
             return '<div class="error-placeholder" title="No image URL provided">No Img</div>';
         }
-        // Added 'referrerpolicy="no-referrer"' which can sometimes help with loading images from Google Drive/Photos if that's the source
-         return `<img src="${imageUrl}" alt="${altText}" class="egg-image" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" >` +
-                `<div class="error-placeholder" style="display: none;" title="Failed to load image from ${imageUrl}">Img Err</div>`;
+
+        // Add original URL to error title for easier debugging if conversion fails
+        const errorTitle = `Failed to load image. Direct attempt: ${directImageUrl}${directImageUrl !== imageUrl ? ` (Original: ${imageUrl})` : ''}`;
+
+        return `<img src="${directImageUrl}" alt="${altText}" class="egg-image" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" >` +
+               `<div class="error-placeholder" style="display: none;" title="${errorTitle}">Img Err</div>`;
     }
 
-
-    function updateLeaderboard(data) {
-        const tbody = document.getElementById('leaderboard-body');
+    /** Updates leaderboard table with duplicate highlighting */
+    function updateLeaderboard(data, duplicateEggNumbers) {
+        // ... (Keep the existing updateLeaderboard function using createImageHtml) ...
+         const tbody = document.getElementById('leaderboard-body');
         tbody.innerHTML = '';
-
-        if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 px-4 text-gray-500">No egg finds recorded yet.</td></tr>';
-            return;
-        }
+        if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 px-4 text-gray-500">No egg finds recorded yet.</td></tr>'; return; }
 
         data.forEach(item => {
             const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50';
+            const isDuplicateNumber = item.eggNumber && duplicateEggNumbers.has(item.eggNumber);
+             if (isDuplicateNumber) { row.className = 'duplicate-row'; row.title = `Egg ${item.eggNumber} was found more than once!`; }
+             else { row.className = 'hover:bg-gray-50'; }
 
-            let formattedDate = 'Invalid Date';
-            try {
-                 const date = new Date(item.timestamp);
-                 if (!isNaN(date)) {
-                    formattedDate = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
-                 }
-            } catch(e) {/* ignore */}
-
-            const imageHtml = createImageHtml(item.imageUrl, `Egg ${item.eggNumber || ''}`);
+            let formattedDate = 'Invalid Date'; try { const date = new Date(item.timestamp); if (!isNaN(date)) { formattedDate = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }); } } catch(e) {/* ignore */}
+            const imageHtml = createImageHtml(item.imageUrl, `Egg ${item.eggNumber || ''}`); // Uses the conversion helper
 
             row.innerHTML = `
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${formattedDate}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${item.name || 'N/A'}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${item.eggNumber || 'N/A'}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">${formattedDate}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">${item.name || 'N/A'}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm">${item.eggNumber || 'N/A'}</td>
                 <td class="px-4 py-3">${imageHtml}</td>
             `;
-
             tbody.appendChild(row);
         });
     }
 
+    /** Updates the leader section */
     function updateLeaderSection(data) {
-        const leaderSection = document.getElementById('leader-section');
-
-        if (!data || data.length === 0) {
-            leaderSection.innerHTML = '<div class="placeholder text-gray-500">No data available</div>';
-            return;
-        }
-
-        const playerCounts = {};
-        const playerLastImageUrl = {};
-        data.forEach(item => {
-            if (item.name) {
-                 if (!playerCounts[item.name]) {
-                    playerCounts[item.name] = 0;
-                    playerLastImageUrl[item.name] = item.imageUrl;
-                }
-                playerCounts[item.name]++;
-            }
-        });
-
-        let leader = '';
-        let maxEggs = 0;
-        let leaderImageUrl = '';
-
-        for (const player in playerCounts) {
-            if (playerCounts[player] > maxEggs) {
-                maxEggs = playerCounts[player];
-                leader = player;
-                leaderImageUrl = playerLastImageUrl[player];
-            }
-        }
-
-        if (leader) {
-             const imageHtml = createImageHtml(leaderImageUrl, `Latest find by ${leader}`);
-             leaderSection.innerHTML = `
-                <div class="flex items-center p-3 bg-blue-50 rounded-lg">
-                     <div class="mr-4 flex-shrink-0">${imageHtml}</div>
-                     <div class="flex-grow">
-                        <h3 class="font-bold text-lg text-gray-800">${leader}</h3>
-                        <p class="text-sm text-gray-600">${maxEggs} egg${maxEggs !== 1 ? 's' : ''} found</p>
-                    </div>
-                </div>
-            `;
-        } else {
-            leaderSection.innerHTML = '<div class="placeholder text-gray-500">No leader yet.</div>';
-        }
+        // ... (Keep the existing updateLeaderSection function using createImageHtml) ...
+         const leaderSection = document.getElementById('leader-section');
+         if (!data || data.length === 0) { leaderSection.innerHTML = '<div class="placeholder text-gray-500">No data available</div>'; return; }
+         const playerCounts = {}; const playerLastImageUrl = {};
+         data.forEach(item => { if (item.name) { if (!playerCounts[item.name]) { playerCounts[item.name] = 0; playerLastImageUrl[item.name] = item.imageUrl; } playerCounts[item.name]++; } });
+         let leader = ''; let maxEggs = 0; let leaderImageUrl = '';
+         for (const player in playerCounts) { if (playerCounts[player] > maxEggs) { maxEggs = playerCounts[player]; leader = player; leaderImageUrl = playerLastImageUrl[player]; } }
+         if (leader) { const imageHtml = createImageHtml(leaderImageUrl, `Latest find by ${leader}`); /* Uses the conversion helper */ leaderSection.innerHTML = `<div class="flex items-center p-3 bg-blue-50 rounded-lg"><div class="mr-4 flex-shrink-0">${imageHtml}</div><div class="flex-grow"><h3 class="font-bold text-lg text-gray-800">${leader}</h3><p class="text-sm text-gray-600">${maxEggs} egg${maxEggs !== 1 ? 's' : ''} found</p></div></div>`; }
+         else { leaderSection.innerHTML = '<div class="placeholder text-gray-500">No leader yet.</div>'; }
     }
 
+    /** Updates recent activity */
     function updateRecentActivity(data) {
+        // ... (Keep the existing updateRecentActivity function using createImageHtml) ...
         const recentActivity = document.getElementById('recent-activity');
-
-         if (!data || data.length === 0) {
-            recentActivity.innerHTML = '<div class="placeholder text-gray-500">No recent activity</div>';
-            return;
-        }
-
-        const mostRecent = data[0];
-
-        if (mostRecent && mostRecent.name) {
-             const imageHtml = createImageHtml(mostRecent.imageUrl, `Egg ${mostRecent.eggNumber || ''}`);
-            recentActivity.innerHTML = `
-                <div class="flex items-center">
-                     <div class="mr-3 flex-shrink-0">${imageHtml}</div>
-                     <div class="flex-grow">
-                        <p class="font-semibold text-gray-800">${mostRecent.name}</p>
-                        <p class="text-sm text-gray-600">Found egg #${mostRecent.eggNumber || '?'}</p>
-                    </div>
-                </div>
-            `;
-        } else {
-             recentActivity.innerHTML = '<div class="placeholder text-gray-500">No valid recent activity found</div>';
-        }
+         if (!data || data.length === 0) { recentActivity.innerHTML = '<div class="placeholder text-gray-500">No recent activity</div>'; return; }
+         const mostRecent = data[0];
+         if (mostRecent && mostRecent.name) { const imageHtml = createImageHtml(mostRecent.imageUrl, `Egg ${mostRecent.eggNumber || ''}`); /* Uses the conversion helper */ recentActivity.innerHTML = `<div class="flex items-center"><div class="mr-3 flex-shrink-0">${imageHtml}</div><div class="flex-grow"><p class="font-semibold text-gray-800">${mostRecent.name}</p><p class="text-sm text-gray-600">Found egg #${mostRecent.eggNumber || '?'}</p></div></div>`; }
+         else { recentActivity.innerHTML = '<div class="placeholder text-gray-500">No valid recent activity found</div>'; }
     }
 
-    function updateProgressBar(data) {
-         if (!data) { return; }
-        const uniqueEggs = new Set();
-        data.forEach(item => {
-            if (item.eggNumber) { uniqueEggs.add(item.eggNumber); }
-        });
-
-        const eggsFound = uniqueEggs.size;
-        const totalEggs = config.totalEggs > 0 ? config.totalEggs : 1;
-        const percentage = Math.min(100, Math.max(0, Math.round((eggsFound / totalEggs) * 100)));
-
-        document.getElementById('progress-bar').style.width = `${percentage}%`;
-        document.getElementById('progress-text').textContent = `${eggsFound}/${config.totalEggs} eggs found`;
+    /** Updates progress bar AND duplicate warning message */
+    function updateProgressBar(uniqueEggsCount, duplicateEggNumbers) {
+        // ... (Keep the existing updateProgressBar function) ...
+         const eggsFound = uniqueEggsCount;
+         const totalEggs = config.totalEggs > 0 ? config.totalEggs : 1;
+         const percentage = Math.min(100, Math.max(0, Math.round((eggsFound / totalEggs) * 100)));
+         document.getElementById('progress-bar').style.width = `${percentage}%`;
+         document.getElementById('progress-text').textContent = `${eggsFound}/${config.totalEggs} unique eggs found`;
+         const warningDiv = document.getElementById('duplicate-warning');
+         if (duplicateEggNumbers.size > 0) { const eggList = Array.from(duplicateEggNumbers).slice(0, 5).join(', '); const extra = duplicateEggNumbers.size > 5 ? '...' : ''; warningDiv.textContent = `Warning: Duplicate finds for egg(s) #${eggList}${extra}!`; warningDiv.title = `Full list of duplicates: ${Array.from(duplicateEggNumbers).join(', ')}`; }
+         else { warningDiv.textContent = ''; warningDiv.title = ''; }
     }
 
-
+    /** Starts the refresh timer */
     function startRefreshTimer() {
+        // ... (Keep the existing startRefreshTimer function) ...
         if (refreshTimer) { clearInterval(refreshTimer); }
         const intervalMs = Math.max(5000, config.refreshInterval * 1000);
         console.log(`Setting refresh interval to ${intervalMs / 1000} seconds.`);
         refreshTimer = setInterval(fetchData, intervalMs);
     }
 
-    // Initialize
+    // --- Initialize ---
     document.addEventListener('DOMContentLoaded', () => {
-        console.log("DOM Loaded. Calling initial fetchData..."); // Log initial call
-        startRefreshTimer();
-        fetchData(); // Fetch data immediately when the DOM is ready
+        // ... (Keep the existing DOMContentLoaded listener) ...
+         console.log("DOM Loaded. Calling initial fetchData...");
+         startRefreshTimer();
+         fetchData();
     });
     </script>
 </body>
