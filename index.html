@@ -216,11 +216,10 @@
         return { uniqueEggsCount: seenEggs.size, duplicateEggNumbers };
     }
 
-    // --- Google Drive URL Conversion ---
-
     /**
      * Attempts to identify Google Drive File IDs from sharing URLs
      * and constructs the URL to call the Apps Script Image Proxy Web App.
+     * IMPORTANT: This DOES NOT fix permission issues. Files must still be shared correctly.
      * @param {string} originalUrl - The URL from the Google Sheet.
      * @returns {string} The Apps Script proxy URL with fileId parameter, or the original URL.
      */
@@ -235,21 +234,18 @@
     let fileId = null;
 
     try {
-        // Try parsing using URL constructor first
         const url = new URL(originalUrl);
-
         if (url.hostname === 'drive.google.com') {
         if (url.pathname.startsWith('/file/d/')) {
             const parts = url.pathname.split('/');
             if (parts.length >= 4 && parts[1] === 'file' && parts[2] === 'd') {
-            fileId = parts[3]; // Extract FILE_ID from /file/d/FILE_ID/..
+            fileId = parts[3];
             }
         } else if (url.searchParams.has('id') && url.pathname.includes('/open')) {
-            fileId = url.searchParams.get('id'); // Extract FILE_ID from /open?id=FILE_ID
+            fileId = url.searchParams.get('id');
         }
         }
     } catch (e) {
-        // Fallback to basic string matching if URL parsing fails
         if (originalUrl.includes('drive.google.com/file/d/')) {
             const match = originalUrl.match(/drive\.google\.com\/file\/d\/([^\/?]+)/);
             if (match && match[1]) fileId = match[1];
@@ -259,16 +255,14 @@
         }
     }
 
-    // If we successfully extracted a File ID, construct the Apps Script Web App URL
     if (fileId) {
-        // Construct the URL asking our script to serve the image
-        return `<span class="math-inline">\{WEB\_APP\_URL\}?fileId\=</span>{fileId}`;
+        // *** USE BACKTICKS HERE ***
+        return `${WEB_APP_URL}?fileId=${fileId}`;
     }
 
     // If it wasn't identified as a convertible GDrive link, return the original URL
     return originalUrl;
     }
-
 
     // --- UI Update Functions ---
 
