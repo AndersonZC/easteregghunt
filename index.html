@@ -99,7 +99,7 @@
         /* ... (keep all other existing styles: .header-section, etc.) ... */
         .header-section { background-color: #87fac4; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
         .recent-activity-container { background-color: #ffea96; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        .leaderboard { background-color: #f8fafc; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .leaderboard-section { background-color: #f8fafc; border-radius: 1rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); } /* Renamed for clarity */
         .progress-container { height: 24px; background-color: #e5e7eb; border-radius: 9999px; overflow: hidden; }
         .progress-bar { height: 100%; background: linear-gradient(90deg, #60a5fa, #3b82f6); transition: width 0.5s ease-in-out; border-radius: 9999px; }
         body { background-color: #b4f2fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -114,12 +114,13 @@
 
         <h1 class="text-4xl font-bold text-center text-blue-500 mb-4">Langmuir Easter Egg Hunt Leaderboard</h1>
 
-            <div id="small-updates" class="text-center bg-yellow-100 text-yellow-800 font-medium p-3 rounded-lg shadow mb-6">
-                <p>🌟 The hunt is now starting at 1:00AM! 🌟</p>
-                <p>🌟 Egg count has increased from 49 to 74 eggs. 🌟</p>
-                <p>🌟 Due to high demand, we are requesting players to return their eggs. 🌟</p>
-                <p>🚨 Special Challenge! - Find the golden egg #511 for a super duper special prize! 🚨</p>
-            </div>
+        <div id="small-updates" class="text-center bg-yellow-100 text-yellow-800 font-medium p-3 rounded-lg shadow mb-6">
+            <p>🌟 The hunt is now starting at 1:00AM! 🌟</p>
+            <p>🌟 Egg count has increased from 49 to 74 eggs. 🌟</p>
+            <p>🌟 Due to high demand, we are requesting players to return their eggs. 🌟</p>
+            <p>🌟 We are repopulating eggs throughout the day, please check back! 🌟</p>
+            <p>🚨 Special Challenge! - Find the golden egg #511 for a super duper special prize! 🚨</p>
+        </div>
 
         <div class="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-8">
              <a href="https://forms.gle/bXcQqKpyvgiebncK6" target="_blank" rel="noopener noreferrer"
@@ -128,6 +129,7 @@
              </a>
              <a href="https://i.imgur.com/o10J8gU.png" id="howToPlayBtn" rel="noopener noreferrer" class="inline-block bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-5 rounded-lg shadow transition duration-150 ease-in-out text-center w-full sm:w-auto cursor-pointer"> How to Play </a>
         </div>
+
         <div class="header-section p-6 mb-8">
              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                  <div>
@@ -155,7 +157,14 @@
              </div>
          </div>
 
-        <div class="leaderboard p-6">
+         <div class="leaderboard-section p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Top 5 Leaderboard</h2>
+            <ul id="top-5-leaderboard" class="list-disc pl-5 text-gray-800 space-y-1">
+                <li class="text-gray-500">Loading...</li>
+                </ul>
+        </div>
+
+        <div class="leaderboard-section p-6 mb-8">
              <h2 class="text-2xl font-bold text-gray-800 mb-4">All Finds</h2>
              <div class="overflow-x-auto">
                  <table class="min-w-full bg-white rounded-lg overflow-hidden shadow">
@@ -175,7 +184,6 @@
                  </table>
              </div>
         </div>
-
         <div class="mt-6 text-center text-gray-600 text-sm">
             <p>Last updated: <span id="last-updated">Never</span></p>
             <p>Refresh rate set to every 60 seconds</p>
@@ -198,9 +206,7 @@
         sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3GWG7_o4wMLqEebc7rIDpyLp2wPCh4l5j-01R0Pi3oiBHT8G2PUVm75hdt3Az0zgGTiJj-9dobl3J/pub?output=csv',
         totalEggs: 74,
         refreshInterval: 60,
-        // <<< START: Added How to Play Image URL >>>
         howToPlayImageUrl: 'https://i.imgur.com/o10J8gU.png' // Direct link to the How to Play image
-        // <<< END: Added How to Play Image URL >>>
     };
     let refreshTimer;
 
@@ -222,7 +228,7 @@
             const csvText = await response.text();
             console.log("Data fetched, parsing CSV...");
             const formattedData = parseCSV(csvText);
-            if (formattedData === null) return;
+            if (formattedData === null) return; // Error during parsing
 
             console.log("Processing data for duplicates...");
             const { uniqueEggsCount, duplicateEggNumbers } = processEggData(formattedData);
@@ -234,6 +240,9 @@
             updateLeaderSection(formattedData);
             updateRecentActivity(formattedData);
             updateProgressBar(uniqueEggsCount, duplicateEggNumbers);
+            // <<< START: Call function to update Top 5 Leaderboard >>>
+            updateTop5Leaderboard(formattedData);
+            // <<< END: Call function to update Top 5 Leaderboard >>>
             console.log("UI Updated.");
         } catch (error) {
             console.error('Error fetching/processing data:', error);
@@ -247,96 +256,141 @@
         try {
             const lines = csv.split(/[\r\n]+/);
 
+            // Trim trailing empty lines
             while (lines.length > 0 && !lines[lines.length - 1].trim()) { lines.pop(); }
-            if (lines.length <= 1) { return []; }
+            if (lines.length <= 1) { return []; } // Handle empty or header-only CSV
 
+            // Robust header parsing (handles quoted commas)
             const headerLine = lines[0];
             const headersRaw = [];
             let currentHeader = '';
             let inQuotesHeader = false;
             for (let j = 0; j < headerLine.length; j++) {
                 const char = headerLine[j];
-                if (char === '"' && j + 1 < headerLine.length && headerLine[j + 1] === '"') { currentHeader += '"'; j++; }
-                else if (char === '"') { inQuotesHeader = !inQuotesHeader; }
-                else if (char === ',' && !inQuotesHeader) { headersRaw.push(currentHeader.trim()); currentHeader = ''; }
-                else { currentHeader += char; }
+                if (char === '"' && j + 1 < headerLine.length && headerLine[j + 1] === '"') {
+                    // Handle escaped quote ("")
+                    currentHeader += '"';
+                    j++;
+                } else if (char === '"') {
+                    inQuotesHeader = !inQuotesHeader;
+                } else if (char === ',' && !inQuotesHeader) {
+                    headersRaw.push(currentHeader.trim());
+                    currentHeader = '';
+                } else {
+                    currentHeader += char;
+                }
             }
-            headersRaw.push(currentHeader.trim());
-            const headers = headersRaw.map(h => h.toLowerCase());
+            headersRaw.push(currentHeader.trim()); // Add the last header
+            const headers = headersRaw.map(h => h.toLowerCase()); // Standardize headers
 
+            // Find required columns (case-insensitive, flexible matching)
             const timestampIndex = headers.indexOf('timestamp');
             const nameIndex = headers.indexOf('name');
             const eggNumberIndex = headers.findIndex(h => h.includes('egg') && h.includes('number'));
             const imageUrlIndex = headers.findIndex(h => h.includes('url') || h.includes('image'));
 
-            if (timestampIndex === -1 || nameIndex === -1 || eggNumberIndex === -1 || imageUrlIndex === -1) {
-                 const missing = [(timestampIndex === -1 ? 'timestamp' : null),(nameIndex === -1 ? 'name' : null),(eggNumberIndex === -1 ? 'egg number' : null),(imageUrlIndex === -1 ? 'image url' : null)].filter(Boolean).join(', ');
+            // Validate header presence
+             if (timestampIndex === -1 || nameIndex === -1 || eggNumberIndex === -1 || imageUrlIndex === -1) {
+                 const missing = [
+                     (timestampIndex === -1 ? 'timestamp' : null),
+                     (nameIndex === -1 ? 'name' : null),
+                     (eggNumberIndex === -1 ? 'egg number' : null),
+                     (imageUrlIndex === -1 ? 'image url' : null)
+                 ].filter(Boolean).join(', '); // Filter out nulls before joining
                  console.error(`Error: Could not find required column(s): ${missing}. Found headers:`, headers);
                  updateUIOnError(`Error: Required column(s) (${missing}) not found in Sheet. Check first row.`);
-                 return null;
-            }
+                 return null; // Indicate failure
+             }
 
+            // Parse data rows
             const formattedData = [];
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
-                if (!line || !line.trim()) continue;
+                if (!line || !line.trim()) continue; // Skip empty lines
+
+                // Robust row parsing (handles quoted commas)
                 const row = [];
                 let currentVal = '';
                 let inQuotes = false;
                 for (let j = 0; j < line.length; j++) {
                     const char = line[j];
-                    if (char === '"' && j + 1 < line.length && line[j + 1] === '"') { currentVal += '"'; j++; }
-                    else if (char === '"') { inQuotes = !inQuotes; }
-                    else if (char === ',' && !inQuotes) { row.push(currentVal.trim()); currentVal = ''; }
-                    else { currentVal += char; }
+                     if (char === '"' && j + 1 < line.length && line[j + 1] === '"') {
+                         currentVal += '"'; j++; // Handle escaped quote
+                     } else if (char === '"') {
+                         inQuotes = !inQuotes;
+                     } else if (char === ',' && !inQuotes) {
+                         row.push(currentVal.trim()); currentVal = '';
+                     } else {
+                         currentVal += char;
+                     }
                 }
-                row.push(currentVal.trim());
-                if (row.length !== headers.length) { console.warn(`Skipping row ${i + 1}: Parsed column count (${row.length}) != header count (${headers.length}). Line: "${line}"`); continue; }
+                row.push(currentVal.trim()); // Add last value
 
+                // Basic validation: Check column count before accessing indices
+                if (row.length !== headers.length) {
+                    console.warn(`Skipping row ${i + 1}: Parsed column count (${row.length}) != header count (${headers.length}). Line: "${line}"`);
+                    continue;
+                }
+
+                // Extract data using determined indices
                 const rowData = {
-                    timestamp: row[timestampIndex] || '', name: row[nameIndex] || '',
-                    eggNumber: row[eggNumberIndex] || '', imageUrl: row[imageUrlIndex] || ''
+                    timestamp: row[timestampIndex] || '',
+                    name: row[nameIndex] || '',
+                    eggNumber: row[eggNumberIndex] || '',
+                    imageUrl: row[imageUrlIndex] || ''
                 };
+
                 // More robust timestamp validation
                  let timestampDate = null;
                  try {
+                     // Attempt to parse the timestamp. Handle potential errors.
                      timestampDate = new Date(rowData.timestamp);
                  } catch (e) { /* ignore parsing error */ }
+
+                 // Check if the date is valid AND not NaN
                  if (!timestampDate || isNaN(timestampDate.getTime())) {
                      console.warn(`Skipping row ${i + 1}: Invalid timestamp "${rowData.timestamp}". Line: "${line}"`);
-                     continue;
+                     continue; // Skip rows with invalid timestamps
                  }
+
                 formattedData.push(rowData);
             }
 
+            // Sort by timestamp descending (most recent first)
             formattedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             console.log(`Parsed ${formattedData.length} valid rows.`);
             return formattedData;
         } catch (error) {
             console.error("Error parsing CSV:", error);
             updateUIOnError(`Error parsing data: ${error.message}. Check console.`);
-            return null;
+            return null; // Indicate failure
         }
     }
 
     /** Processes data for unique/duplicate eggs */
     function processEggData(data) {
-        // ... (Keep the existing processEggData function) ...
+       // ... (Keep the existing processEggData function) ...
        const seenEggs = new Set();
        const duplicateEggNumbers = new Set();
-       for (let i = data.length - 1; i >= 0; i--) { // Iterate backwards to identify duplicates correctly based on first seen
+       // Iterate backwards through the sorted data (oldest first)
+       // to correctly identify the *first* instance of each egg number.
+       for (let i = data.length - 1; i >= 0; i--) {
            const item = data[i];
            if (item.eggNumber) {
                const eggNumStr = String(item.eggNumber).trim(); // Normalize
-               if(eggNumStr) {
+               if(eggNumStr) { // Ensure it's not empty after trimming
                    if (seenEggs.has(eggNumStr)) {
+                       // This egg number has been seen before, mark it as a duplicate
                        duplicateEggNumbers.add(eggNumStr);
                    } else {
+                       // First time seeing this egg number
                        seenEggs.add(eggNumStr);
                    }
                }
            }
        }
+       // seenEggs will contain all unique egg numbers found
+       // duplicateEggNumbers will contain numbers found more than once
        return { uniqueEggsCount: seenEggs.size, duplicateEggNumbers };
     }
 
@@ -350,73 +404,112 @@
         document.getElementById('recent-activity').innerHTML = `<div class="placeholder text-red-600 p-4 h-24">${errorMessage}</div>`;
         document.getElementById('progress-text').textContent = 'Error';
         document.getElementById('duplicate-warning').textContent = '';
+        // <<< START: Update Top 5 Leaderboard on Error >>>
+        const top5List = document.getElementById('top-5-leaderboard');
+        if (top5List) {
+             top5List.innerHTML = `<li class="text-red-600">${errorMessage}</li>`;
+        }
+        // <<< END: Update Top 5 Leaderboard on Error >>>
     }
 
     /** Creates the HTML for an image + adds data attribute for large view */
     function createImageHtml(imageUrl, altText) {
+        // ... (Keep the existing createImageHtml function) ...
         let fileId = null;
         let largeSrc = ''; // URL for the larger modal image
-        let isClickable = false; // Flag to add egg-image class
+        // let isClickable = false; // Flag to add egg-image class (implicitly true if largeSrc is set)
 
         // --- Logic to extract fileId and determine largeSrc ---
         try {
             if (typeof imageUrl === 'string' && imageUrl.includes('drive.google.com')) {
+                 // More robust matching for different Google Drive URL formats
                  if (imageUrl.includes('/file/d/')) {
                      const match = imageUrl.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
                      if (match && match[1]) fileId = match[1];
                  } else if (imageUrl.includes('open?id=')) {
                      const urlParams = new URLSearchParams(new URL(imageUrl).search);
                      fileId = urlParams.get('id');
-                 } else if (imageUrl.includes('/uc?id=')) {
+                 } else if (imageUrl.includes('/uc?id=')) { // Common format for direct downloads/thumbnails
                       const urlParams = new URLSearchParams(new URL(imageUrl).search);
                      fileId = urlParams.get('id');
                  }
+                 // Add more formats if needed
             }
-        } catch (e) { console.error("Error parsing Google Drive URL:", imageUrl, e); }
+        } catch (e) {
+            // Log error but don't stop execution, treat as non-Drive URL
+            console.error("Error parsing Google Drive URL:", imageUrl, e);
+        }
 
         if (fileId) {
             // Use Google Drive thumbnail API for both small and large versions
-            const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w200`; // Thumbnail size
+            // Use sz=s220 for thumbnail (common Drive API size) or adjust as needed
+            const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w100`; // Smaller thumb
             largeSrc = `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`; // Larger size for modal
-            isClickable = true; // Make Drive images clickable
+            // isClickable = true; // Make Drive images clickable
              const errorTitle = `Failed to load thumbnail. URL: ${thumbnailUrl} (Original: ${imageUrl || 'N/A'}) - Check sharing permissions?`;
             // Return the img tag with thumbnail, large source data, error fallback
             // Added referrerpolicy="no-referrer" to potentially help with Drive image loading issues
-            return `<img src="${thumbnailUrl}" alt="${altText}" class="egg-image" data-large-src="${largeSrc}" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" >` +
+            return `<img src="${thumbnailUrl}" alt="${altText}" class="egg-image" data-large-src="${largeSrc}" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" >` +
                    `<div class="error-placeholder" style="display: none;" title="${errorTitle}">Img Err</div>`;
 
         } else if (typeof imageUrl === 'string' && !imageUrl.includes('drive.google.com') && imageUrl.trim() !== '') {
             // Handle non-Drive, non-empty URLs - use the same URL for thumbnail and large view
-            largeSrc = imageUrl;
-            isClickable = true; // Also make these clickable
-             // Added referrerpolicy="no-referrer"
-            return `<img src="${imageUrl}" alt="${altText || 'Image'}" class="egg-image" data-large-src="${largeSrc}" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" >` +
-                   `<div class="error-placeholder" style="display: none;" title="Image failed to load. Original URL: ${imageUrl}">Img Err</div>`;
+            // Check if it's a plausible image URL (basic check)
+            if (imageUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i) || imageUrl.startsWith('data:image')) {
+                largeSrc = imageUrl;
+                // isClickable = true; // Also make these clickable
+                 // Added referrerpolicy="no-referrer" and loading="lazy"
+                return `<img src="${imageUrl}" alt="${altText || 'Image'}" class="egg-image" data-large-src="${largeSrc}" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';" >` +
+                       `<div class="error-placeholder" style="display: none;" title="Image failed to load. Original URL: ${imageUrl}">Img Err</div>`;
+            } else {
+                 // Not a standard image URL or Drive link
+                 console.warn("URL doesn't look like a standard image or recognized Drive link:", imageUrl);
+                 return `<div class="error-placeholder" title="Invalid or non-image URL. Original: ${imageUrl || 'N/A'}">No Img</div>`;
+            }
         } else {
             // Invalid, empty, or unparsable Drive URL - show placeholder, not clickable
-            console.warn("Could not get valid image source for:", imageUrl);
+            // console.warn("Could not get valid image source for:", imageUrl); // Already handled above or implicitly here
             return `<div class="error-placeholder" title="Invalid or missing image URL. Original: ${imageUrl || 'N/A'}">No Img</div>`;
         }
     }
 
     /** Updates leaderboard table */
     function updateLeaderboard(data, duplicateEggNumbers) {
+         // ... (Keep the existing updateLeaderboard function) ...
          const tbody = document.getElementById('leaderboard-body');
-         tbody.innerHTML = '';
-         if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 px-4 text-gray-500">No egg finds recorded yet.</td></tr>'; return; }
+         tbody.innerHTML = ''; // Clear previous entries
+         if (!data || data.length === 0) {
+             tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 px-4 text-gray-500">No egg finds recorded yet.</td></tr>';
+             return;
+         }
 
          data.forEach(item => {
              const row = document.createElement('tr');
              const eggNumStr = String(item.eggNumber || '').trim(); // Normalize
+             // Check if this specific *entry* corresponds to a number that has duplicates overall
              const isDuplicateNumber = eggNumStr && duplicateEggNumbers.has(eggNumStr);
 
-              if (isDuplicateNumber) { row.className = 'duplicate-row'; row.title = `Egg ${eggNumStr} was found more than once!`; }
-              else { row.className = 'hover:bg-gray-50'; }
+              // Apply styling based on whether the egg number *itself* is duplicated across entries
+              if (isDuplicateNumber) {
+                  row.className = 'duplicate-row'; // Add class for styling duplicates
+                  row.title = `Egg ${eggNumStr} was found more than once! Check other entries.`;
+              } else {
+                  row.className = 'hover:bg-gray-50'; // Standard hover effect
+              }
 
-             let formattedDate = 'Invalid Date'; try { const date = new Date(item.timestamp); if (!isNaN(date)) { formattedDate = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }); } } catch(e) {/* ignore */}
-             // createImageHtml now returns the appropriate img or placeholder
-             const imageHtml = createImageHtml(item.imageUrl, `Egg ${eggNumStr || ''} found by ${item.name || 'Unknown'}`);
+             // Format timestamp
+             let formattedDate = 'Invalid Date';
+             try {
+                 const date = new Date(item.timestamp);
+                 if (!isNaN(date)) {
+                     formattedDate = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+                 }
+             } catch(e) {/* ignore */} // Don't break if timestamp is bad
 
+             // Get image HTML (handles errors internally)
+             const imageHtml = createImageHtml(item.imageUrl, `Egg ${eggNumStr || '?'} found by ${item.name || 'Unknown'}`);
+
+             // Populate row cells
              row.innerHTML = `
                  <td class="px-4 py-3 whitespace-nowrap text-sm align-middle">${formattedDate}</td>
                  <td class="px-4 py-3 whitespace-nowrap text-sm font-medium align-middle">${item.name || 'N/A'}</td>
@@ -427,33 +520,69 @@
          });
      }
 
-
     /** Updates the leader section */
     function updateLeaderSection(data) {
+        // ... (Keep the existing updateLeaderSection function) ...
         const leaderSection = document.getElementById('leader-section');
-        if (!data || data.length === 0) { leaderSection.innerHTML = '<div class="placeholder text-gray-500 h-24">No data available</div>'; return; }
-        const playerCounts = {}; const playerLastImageUrl = {};
-        data.forEach(item => { if (item.name) { if (!playerCounts[item.name]) { playerCounts[item.name] = 0; playerLastImageUrl[item.name] = item.imageUrl; } playerCounts[item.name]++; } });
-        let leader = ''; let maxEggs = 0; let leaderImageUrl = '';
-        // Find the leader based on maximum unique eggs first, then by count if tie
-        // This requires knowing unique eggs per player, let's simplify back to total count for now
-         for (const player in playerCounts) { if (playerCounts[player] > maxEggs) { maxEggs = playerCounts[player]; leader = player; leaderImageUrl = playerLastImageUrl[player]; } }
+        if (!data || data.length === 0) {
+            leaderSection.innerHTML = '<div class="placeholder text-gray-500 h-24">No data available</div>';
+            return;
+        }
+
+        // Calculate egg counts per player and store the URL of their most recent find
+        const playerCounts = {};
+        const playerLastImageUrl = {}; // Store the image URL of the *most recent* find per player
+        data.forEach(item => {
+            if (item.name) {
+                const playerName = item.name.trim(); // Normalize name
+                 if (!playerCounts[playerName]) {
+                    playerCounts[playerName] = 0;
+                    // Since data is sorted newest first, the first time we see a player,
+                    // that's their most recent find's image.
+                    playerLastImageUrl[playerName] = item.imageUrl;
+                 }
+                 playerCounts[playerName]++;
+            }
+        });
+
+        let leader = '';
+        let maxEggs = 0;
+        let leaderImageUrl = '';
+
+        // Find the player with the highest count
+        for (const player in playerCounts) {
+            if (playerCounts[player] > maxEggs) {
+                maxEggs = playerCounts[player];
+                leader = player;
+                leaderImageUrl = playerLastImageUrl[player]; // Get the image URL of their most recent find
+            }
+        }
 
         if (leader) {
-            // Use createImageHtml but make sure it's not clickable in this context
-            const imageHtml = createImageHtml(leaderImageUrl, `Latest find by ${leader}`);
-            const tempDiv = document.createElement('div'); tempDiv.innerHTML = imageHtml;
-            const img = tempDiv.querySelector('img.egg-image'); // Target only clickable images
+            // Get the image HTML, but make it non-interactive in this context
+            const imageHtml = createImageHtml(leaderImageUrl, `Most recent find by ${leader}`);
+            // Create a temporary div to parse the HTML and modify the image tag
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = imageHtml;
+            const img = tempDiv.querySelector('img.egg-image'); // Target only clickable images specifically
             if (img) {
                 img.classList.remove('egg-image'); // Remove class that adds cursor:pointer and hover effect
                 img.style.cursor = 'default';       // Explicitly set default cursor
-                 // Also remove the large source data attribute if not needed
-                 img.removeAttribute('data-large-src');
+                img.removeAttribute('data-large-src'); // Remove the attribute that enables modal popup
             }
+            // Ensure error placeholder is also non-interactive
              const errorPlaceholder = tempDiv.querySelector('.error-placeholder');
-             if (errorPlaceholder) errorPlaceholder.style.cursor = 'default'; // Make placeholder non-interactive too
+             if (errorPlaceholder) errorPlaceholder.style.cursor = 'default';
 
-            leaderSection.innerHTML = `<div class="flex items-center p-3 bg-blue-50 rounded-lg"><div class="mr-4 flex-shrink-0">${tempDiv.innerHTML}</div><div class="flex-grow"><h3 class="font-bold text-lg text-gray-800">${leader}</h3><p class="text-sm text-gray-600">${maxEggs} egg${maxEggs !== 1 ? 's' : ''} found</p></div></div>`;
+            // Update the leader section HTML
+            leaderSection.innerHTML = `
+                <div class="flex items-center p-3 bg-blue-50 rounded-lg">
+                    <div class="mr-4 flex-shrink-0">${tempDiv.innerHTML}</div> {/* Use modified HTML */}
+                    <div class="flex-grow">
+                        <h3 class="font-bold text-lg text-gray-800">${leader}</h3>
+                        <p class="text-sm text-gray-600">${maxEggs} egg${maxEggs !== 1 ? 's' : ''} found</p>
+                    </div>
+                </div>`;
          } else {
              leaderSection.innerHTML = '<div class="placeholder text-gray-500 h-24">No leader yet.</div>';
          }
@@ -461,56 +590,134 @@
 
     /** Updates recent activity */
     function updateRecentActivity(data) {
+        // ... (Keep the existing updateRecentActivity function) ...
         const recentActivity = document.getElementById('recent-activity');
-        if (!data || data.length === 0) { recentActivity.innerHTML = '<div class="placeholder text-gray-500 h-24">No recent activity</div>'; return; }
+        if (!data || data.length === 0) {
+            recentActivity.innerHTML = '<div class="placeholder text-gray-500 h-24">No recent activity</div>';
+            return;
+        }
+
         const mostRecent = data[0]; // Data is sorted descending by timestamp
+
         if (mostRecent && mostRecent.name) {
-             const imageHtml = createImageHtml(mostRecent.imageUrl, `Egg ${mostRecent.eggNumber || ''}`);
-             // Make sure image is not clickable in this context
-             const tempDiv = document.createElement('div'); tempDiv.innerHTML = imageHtml;
-             const img = tempDiv.querySelector('img.egg-image'); // Target only clickable images
+             // Get image HTML, ensure it's not interactive here
+             const imageHtml = createImageHtml(mostRecent.imageUrl, `Egg ${mostRecent.eggNumber || '?'}`);
+             const tempDiv = document.createElement('div');
+             tempDiv.innerHTML = imageHtml;
+             const img = tempDiv.querySelector('img.egg-image');
              if (img) {
-                 img.classList.remove('egg-image'); // Remove class that adds cursor:pointer and hover effect
-                 img.style.cursor = 'default';       // Explicitly set default cursor
-                  // Also remove the large source data attribute if not needed
+                 img.classList.remove('egg-image');
+                 img.style.cursor = 'default';
                  img.removeAttribute('data-large-src');
              }
              const errorPlaceholder = tempDiv.querySelector('.error-placeholder');
-             if (errorPlaceholder) errorPlaceholder.style.cursor = 'default'; // Make placeholder non-interactive too
+             if (errorPlaceholder) errorPlaceholder.style.cursor = 'default';
 
-             recentActivity.innerHTML = `<div class="flex items-center"><div class="mr-3 flex-shrink-0">${tempDiv.innerHTML}</div><div class="flex-grow"><p class="font-semibold text-gray-800">${mostRecent.name}</p><p class="text-sm text-gray-600">Found egg #${mostRecent.eggNumber || '?'}</p></div></div>`;
+             recentActivity.innerHTML = `
+                 <div class="flex items-center">
+                     <div class="mr-3 flex-shrink-0">${tempDiv.innerHTML}</div> {/* Use modified HTML */}
+                     <div class="flex-grow">
+                         <p class="font-semibold text-gray-800">${mostRecent.name}</p>
+                         <p class="text-sm text-gray-600">Found egg #${mostRecent.eggNumber || '?'}</p>
+                     </div>
+                 </div>`;
          } else {
+             // Handle case where the most recent entry might be missing a name
              recentActivity.innerHTML = '<div class="placeholder text-gray-500 h-24">No valid recent activity found</div>';
          }
     }
 
     /** Updates progress bar AND duplicate warning */
     function updateProgressBar(uniqueEggsCount, duplicateEggNumbers) {
-         const eggsFound = uniqueEggsCount;
+         // ... (Keep the existing updateProgressBar function) ...
+         const eggsFound = uniqueEggsCount; // Base progress on unique eggs
          const totalEggs = config.totalEggs > 0 ? config.totalEggs : 1; // Avoid division by zero
          const percentage = Math.min(100, Math.max(0, Math.round((eggsFound / totalEggs) * 100)));
+
          document.getElementById('progress-bar').style.width = `${percentage}%`;
          document.getElementById('progress-text').textContent = `${eggsFound}/${config.totalEggs} unique eggs found`;
+
+         // Update duplicate warning message
          const warningDiv = document.getElementById('duplicate-warning');
          if (duplicateEggNumbers.size > 0) {
-            const eggList = Array.from(duplicateEggNumbers).sort((a,b) => a - b).slice(0, 5).join(', '); // Sort numerically
-            const extra = duplicateEggNumbers.size > 5 ? '...' : '';
+            // Sort duplicate numbers numerically for display
+            const eggList = Array.from(duplicateEggNumbers).sort((a,b) => Number(a) - Number(b)).slice(0, 5).join(', ');
+            const extra = duplicateEggNumbers.size > 5 ? '...' : ''; // Indicate if there are more duplicates than shown
             warningDiv.textContent = `Warning: Duplicate finds for egg(s) #${eggList}${extra}!`;
-            warningDiv.title = `Full list of duplicates: ${Array.from(duplicateEggNumbers).sort((a,b) => a - b).join(', ')}`;
+            // Add a title attribute for the full list on hover (optional but helpful)
+            warningDiv.title = `Full list of duplicate egg numbers found: ${Array.from(duplicateEggNumbers).sort((a,b) => Number(a) - Number(b)).join(', ')}`;
+        } else {
+            warningDiv.textContent = ''; // Clear warning if no duplicates
+            warningDiv.title = ''; // Clear title attribute
         }
-         else { warningDiv.textContent = ''; warningDiv.title = ''; }
     }
+
+    /** <<< START: Added function to update the Top 5 Leaderboard >>> */
+    function updateTop5Leaderboard(data) {
+        const top5Leaderboard = document.getElementById('top-5-leaderboard');
+        if (!top5Leaderboard) {
+            console.error("Top 5 Leaderboard UL element not found.");
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            top5Leaderboard.innerHTML = '<li class="text-gray-500">No data available</li>';
+            return;
+        }
+
+        // Calculate egg counts per player
+        const playerCounts = {};
+        data.forEach(item => {
+            if (item.name) {
+                const playerName = item.name.trim(); // Normalize name
+                if (!playerCounts[playerName]) {
+                    playerCounts[playerName] = 0;
+                }
+                playerCounts[playerName]++;
+            }
+        });
+
+        // Sort players by egg count descending, then alphabetically for ties
+        const sortedPlayers = Object.entries(playerCounts)
+            .sort(([, countA, nameA], [, countB, nameB]) => {
+                if (countB !== countA) {
+                    return countB - countA; // Sort by count descending
+                }
+                // If counts are equal, sort alphabetically by name (case-insensitive)
+                return nameA.localeCompare(nameB);
+            })
+            .slice(0, 5); // Take only the top 5
+
+        // Update the list in the DOM
+        top5Leaderboard.innerHTML = ''; // Clear previous entries or loading state
+
+        if (sortedPlayers.length === 0) {
+             top5Leaderboard.innerHTML = '<li class="text-gray-500">No players found yet.</li>';
+             return;
+        }
+
+        sortedPlayers.forEach(([player, count], index) => {
+            const listItem = document.createElement('li');
+            listItem.className = 'text-sm'; // Add some styling
+            listItem.textContent = `${index + 1}. ${player}: ${count} egg${count !== 1 ? 's' : ''} found`;
+            top5Leaderboard.appendChild(listItem);
+        });
+    }
+    /** <<< END: Added function to update the Top 5 Leaderboard >>> */
+
 
     /** Starts the refresh timer */
     function startRefreshTimer() {
-        if (refreshTimer) { clearInterval(refreshTimer); }
-        const intervalMs = Math.max(5000, config.refreshInterval * 1000); // Minimum 5 seconds
+        // ... (Keep the existing startRefreshTimer function) ...
+        if (refreshTimer) { clearInterval(refreshTimer); } // Clear existing timer if any
+        const intervalMs = Math.max(5000, config.refreshInterval * 1000); // Ensure minimum 5 seconds interval
         console.log(`Setting refresh interval to ${intervalMs / 1000} seconds.`);
         refreshTimer = setInterval(fetchData, intervalMs);
     }
 
     /** Shows the image modal */
     function showModal(largeImageUrl, altText) {
+        // ... (Keep the existing showModal function) ...
         if (!imageModal || !modalImage || !largeImageUrl) {
             console.error("Modal elements or image URL missing for showModal");
             return;
@@ -518,15 +725,16 @@
         console.log("Showing modal for:", largeImageUrl);
         modalImage.src = largeImageUrl;
         modalImage.alt = altText || "Expanded Image";
-        imageModal.style.display = 'flex'; // Show the modal
+        imageModal.style.display = 'flex'; // Show the modal (use flex as defined in CSS)
         document.body.classList.add('modal-open'); // Prevent background scroll
     }
 
     /** Hides the image modal */
     function hideModal() {
+        // ... (Keep the existing hideModal function) ...
         if (!imageModal || !modalImage) return;
         imageModal.style.display = 'none'; // Hide the modal
-        modalImage.src = ''; // Clear src to stop loading/free memory
+        modalImage.src = ''; // Clear src immediately to stop loading/free memory
         modalImage.alt = '';
         document.body.classList.remove('modal-open'); // Restore background scroll
     }
@@ -539,7 +747,7 @@
         imageModal = document.getElementById('imageModal');
         modalImage = document.getElementById('modalImage');
         modalCloseBtn = document.getElementById('modalCloseBtn');
-        leaderboardBody = document.getElementById('leaderboard-body');
+        leaderboardBody = document.getElementById('leaderboard-body'); // Main leaderboard table body
 
         // Get How to Play button
         const howToPlayButton = document.getElementById('howToPlayBtn');
@@ -555,7 +763,8 @@
         // Click outside Modal content to close
         if (imageModal) {
             imageModal.addEventListener('click', (event) => {
-                if (event.target === imageModal) { // Check if the click is on the overlay itself
+                // Close only if the click is directly on the overlay (the .modal-overlay element)
+                if (event.target === imageModal) {
                     hideModal();
                 }
             });
@@ -568,44 +777,46 @@
             }
         });
 
-        // Click on Leaderboard image to open Modal (Event Delegation)
+        // Click on Leaderboard image to open Modal (Event Delegation on the table body)
         if (leaderboardBody) {
             leaderboardBody.addEventListener('click', (event) => {
+                // Find the closest ancestor image that has the 'egg-image' class and 'data-large-src'
                 const clickedImage = event.target.closest('img.egg-image[data-large-src]');
                 if (clickedImage) {
                     const largeSrc = clickedImage.dataset.largeSrc;
-                    if (largeSrc) {
+                    // Ensure largeSrc is not empty or just the placeholder text
+                    if (largeSrc && largeSrc !== 'undefined' && largeSrc !== 'null') {
                         showModal(largeSrc, clickedImage.alt);
                     } else {
-                        console.warn("Clicked image doesn't have a valid data-large-src attribute value.");
+                        console.warn("Clicked image doesn't have a valid data-large-src attribute value:", clickedImage);
                     }
                 }
             });
         } else {
-            console.error("Leaderboard body not found for event listener attachment.");
+            console.error("Leaderboard body (#leaderboard-body) not found for event listener attachment.");
         }
 
-        // <<< START: Added How to Play Button Listener >>>
+        // How to Play Button Listener
         if (howToPlayButton) {
              howToPlayButton.addEventListener('click', (event) => {
-                 event.preventDefault(); // Stop the link from navigating
+                 event.preventDefault(); // Stop the default link behavior
                  if (config.howToPlayImageUrl) {
+                    // Use the same modal to display the 'How to Play' image
                     showModal(config.howToPlayImageUrl, 'How to Play Guide');
                  } else {
                      console.error("How to Play image URL is not configured.");
-                     // Optionally show an alert to the user
+                     // Optionally provide user feedback
                      alert("Sorry, the 'How to Play' guide image is currently unavailable.");
                  }
              });
         } else {
              console.error("How to Play button (#howToPlayBtn) not found.");
         }
-        // <<< END: Added How to Play Button Listener >>>
 
 
         // --- Initial Data Load and Timer Start ---
-        fetchData(); // Initial fetch
-        startRefreshTimer(); // Start refreshing data
+        fetchData(); // Initial fetch on page load
+        startRefreshTimer(); // Start the automatic refresh timer
     });
     </script>
 </body>
