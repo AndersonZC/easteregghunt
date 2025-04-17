@@ -113,8 +113,13 @@
     <div class="container mx-auto max-w-5xl">
 
         <h1 class="text-4xl font-bold text-center text-blue-500 mb-4">Langmuir Easter Egg Hunt Leaderboard</h1>
-        <h2 class="text-2xl font-bold text-center text-red-500 mb-4">The hunt is now starting at 1:00AM!</h1>
 
+            <div id="small-updates" class="text-center bg-yellow-100 text-yellow-800 font-medium p-3 rounded-lg shadow mb-6">
+                <p>🌟 The hunt is now starting at 1:00AM! 🌟</p>
+                <p>🌟 Egg count has increased from 49 to 74 eggs. 🌟</p>
+                <p>🌟 Due to high demand, we are requesting players to return their eggs. 🌟</p>
+                <p>🚨 Special Challenge! - Find the golden egg #511 for a super duper special prize! 🚨</p>
+            </div>
 
         <div class="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-8">
              <a href="https://forms.gle/bXcQqKpyvgiebncK6" target="_blank" rel="noopener noreferrer"
@@ -141,7 +146,7 @@
              <div class="mt-8">
                  <div class="flex justify-between mb-2">
                      <h2 class="text-xl font-semibold text-gray-700">Overall Progress</h2>
-                     <span id="progress-text" class="font-medium">0/49 eggs found</span>
+                     <span id="progress-text" class="font-medium">0/74 eggs found</span>
                  </div>
                  <div class="progress-container">
                      <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
@@ -173,6 +178,9 @@
 
         <div class="mt-6 text-center text-gray-600 text-sm">
             <p>Last updated: <span id="last-updated">Never</span></p>
+            <p>Refresh rate set to every 60 seconds</p>
+            <p>Made with ❤️ by Langmuir Hall Council</p>
+            <p class="text-xs text-gray-300 mt-1">Hint for finding Golden Egg #511: Look behind the white board</p>
         </div>
     </div>
 
@@ -188,8 +196,8 @@
     // --- Configuration and Setup ---
     let config = {
         sheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS3GWG7_o4wMLqEebc7rIDpyLp2wPCh4l5j-01R0Pi3oiBHT8G2PUVm75hdt3Az0zgGTiJj-9dobl3J/pub?output=csv',
-        totalEggs: 49,
-        refreshInterval: 10,
+        totalEggs: 74,
+        refreshInterval: 60,
         // <<< START: Added How to Play Image URL >>>
         howToPlayImageUrl: 'https://i.imgur.com/o10J8gU.png' // Direct link to the How to Play image
         // <<< END: Added How to Play Image URL >>>
