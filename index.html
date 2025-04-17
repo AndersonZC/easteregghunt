@@ -679,12 +679,24 @@
 
         // Sort players by egg count descending, then alphabetically for ties
         const sortedPlayers = Object.entries(playerCounts)
-            .sort(([, countA, nameA], [, countB, nameB]) => {
+            .sort((entryA, entryB) => {
+                // Destructure entries properly
+                const nameA = entryA[0];
+                const countA = entryA[1];
+                const nameB = entryB[0];
+                const countB = entryB[1];
+
+                // First, compare by count (descending)
                 if (countB !== countA) {
-                    return countB - countA; // Sort by count descending
+                    return countB - countA;
                 }
-                // If counts are equal, sort alphabetically by name (case-insensitive)
-                return nameA.localeCompare(nameB);
+
+                // If counts are equal, compare by name (alphabetically)
+                // Add safety check: Ensure names are strings before comparing
+                const safeNameA = String(nameA || ""); // Convert null/undefined to ""
+                const safeNameB = String(nameB || ""); // Convert null/undefined to ""
+
+                return safeNameA.localeCompare(safeNameB);
             })
             .slice(0, 5); // Take only the top 5
 
